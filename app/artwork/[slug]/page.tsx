@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { ArtworkImage } from "@/components/artwork-image";
 import { FavoriteButton } from "@/components/favorite-button";
 import { CiteButton } from "@/components/cite-button";
+import { DownloadButton } from "@/components/download-button";
 import { ScrollRow } from "@/components/scroll-row";
 import { getArtworkBySlug, getRelatedArtworks } from "@/lib/db/queries";
 
@@ -79,6 +80,12 @@ export default async function ArtworkPage({
                   {artwork.title}
                 </h1>
                 <div className="flex items-center gap-1">
+                  {artwork.imageUrl && (
+                    <DownloadButton
+                      imageUrl={artwork.imageUrl}
+                      filename={artwork.slug}
+                    />
+                  )}
                   <CiteButton
                     artist={artwork.artists.map((a) => a.name).join(", ")}
                     title={artwork.title}
