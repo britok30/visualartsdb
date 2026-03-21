@@ -13,7 +13,7 @@ import {
   type Action,
 } from "kbar";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function SearchResults() {
   const { results } = useMatches();
@@ -58,6 +58,7 @@ function DynamicSearchActions() {
   }));
   const router = useRouter();
   const [actions, setActions] = useState<Action[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
@@ -66,9 +67,15 @@ function DynamicSearchActions() {
     }
 
     const timer = setTimeout(async () => {
+      // Abort previous request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(searchQuery)}`
+          `/api/search?q=${encodeURIComponent(searchQuery)}`,
+          { signal: controller.signal }
         );
         const data = await res.json();
 
@@ -114,11 +121,23 @@ function DynamicSearchActions() {
           });
         }
 
+        // "View all results" link
+        if (dynamicActions.length > 0) {
+          dynamicActions.push({
+            id: "view-all-results",
+            name: `View all results for "${searchQuery}"`,
+            section: "Search",
+            perform: () =>
+              router.push(`/search?q=${encodeURIComponent(searchQuery)}`),
+          });
+        }
+
         setActions(dynamicActions);
-      } catch {
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
         setActions([]);
       }
-    }, 200);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [searchQuery, router]);
@@ -129,54 +148,67 @@ function DynamicSearchActions() {
 }
 
 export function CommandPalette({ children }: { children: React.ReactNode }) {
-  const staticActions: Action[] = [
+  const router = useRouter();
+
+  const actions: Action[] = [
     {
       id: "home",
       name: "Home",
       section: "Navigation",
-      shortcut: [],
       keywords: "home",
+      perform: () => router.push("/"),
     },
     {
       id: "styles",
       name: "Browse Styles",
       section: "Navigation",
       keywords: "styles movements",
+      perform: () => router.push("/browse/styles"),
     },
     {
       id: "genres",
       name: "Browse Genres",
       section: "Navigation",
       keywords: "genres subjects",
+      perform: () => router.push("/browse/genres"),
     },
     {
       id: "museums",
       name: "Browse Museums",
       section: "Navigation",
       keywords: "museums institutions",
+      perform: () => router.push("/browse/museums"),
     },
     {
       id: "artists",
       name: "Browse Artists",
       section: "Navigation",
       keywords: "artists painters",
+      perform: () => router.push("/browse/artists"),
+    },
+    {
+      id: "favorites",
+      name: "Favorites",
+      section: "Navigation",
+      keywords: "favorites saved liked",
+      perform: () => router.push("/favorites"),
     },
     {
       id: "search",
       name: "Search",
       section: "Navigation",
       keywords: "search find",
+      perform: () => router.push("/search"),
     },
   ];
 
   return (
     <KBarProvider
-      actions={staticActions}
+      actions={actions}
       options={{
         enableHistory: true,
       }}
     >
-      <NavigationHandler />
       <DynamicSearchActions />
       <KBarPortal>
         <KBarPositioner className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm">
@@ -198,52 +230,4 @@ export function CommandPalette({ children }: { children: React.ReactNode }) {
       {children}
     </KBarProvider>
   );
-}
-
-function NavigationHandler() {
-  const router = useRouter();
-
-  useRegisterActions(
-    [
-      {
-        id: "home",
-        name: "Home",
-        section: "Navigation",
-        perform: () => router.push("/"),
-      },
-      {
-        id: "styles",
-        name: "Browse Styles",
-        section: "Navigation",
-        perform: () => router.push("/browse/styles"),
-      },
-      {
-        id: "genres",
-        name: "Browse Genres",
-        section: "Navigation",
-        perform: () => router.push("/browse/genres"),
-      },
-      {
-        id: "museums",
-        name: "Browse Museums",
-        section: "Navigation",
-        perform: () => router.push("/browse/museums"),
-      },
-      {
-        id: "artists",
-        name: "Browse Artists",
-        section: "Navigation",
-        perform: () => router.push("/browse/artists"),
-      },
-      {
-        id: "search",
-        name: "Search",
-        section: "Navigation",
-        perform: () => router.push("/search"),
-      },
-    ],
-    [router]
-  );
-
-  return null;
 }

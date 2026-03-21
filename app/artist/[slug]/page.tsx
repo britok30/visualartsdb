@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { convert } from "html-to-text";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArtworkImage } from "@/components/artwork-image";
@@ -19,7 +20,7 @@ export async function generateMetadata({
   return {
     title: artist.name,
     description:
-      artist.bio?.slice(0, 160) ??
+      artist.bio ? convert(artist.bio, { wordwrap: false }).slice(0, 160) :
       `Explore artworks by ${artist.name}.`,
     openGraph: artist.portraitUrl
       ? {
@@ -104,7 +105,7 @@ export default async function ArtistPage({
 
           {artist.bio && (
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-neutral-500">
-              {artist.bio}
+              {convert(artist.bio, { wordwrap: false })}
             </p>
           )}
         </div>

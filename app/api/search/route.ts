@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { artworks, artists, styles, genres, artworkArtists } from "@/lib/db/schema";
-import { eq, ilike, or, sql } from "drizzle-orm";
+import {
+  artworks,
+  artists,
+  styles,
+  genres,
+  artworkArtists,
+} from "@/lib/db/schema";
+import { eq, ilike, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim();
   if (!q || q.length < 2) {
-    return NextResponse.json({ artists: [], artworks: [], styles: [], genres: [] });
+    return NextResponse.json({
+      artists: [],
+      artworks: [],
+      styles: [],
+      genres: [],
+    });
   }
 
-  const pattern = `%${q}%`;
+  const prefixPattern = `${q}%`;
+  const containsPattern = `%${q}%`;
 
   const [artistRows, artworkRows, styleRows, genreRows] = await Promise.all([
+    // Artists: prefix match first (fast), then contains
     db
       .select({
         id: artists.id,
@@ -20,30 +33,33 @@ export async function GET(request: NextRequest) {
         nationality: artists.nationality,
       })
       .from(artists)
-      .where(ilike(artists.name, pattern))
-      .orderBy(artists.name)
+      .where(ilike(artists.name, containsPattern))
+      .orderBy(
+        sql`CASE WHEN ${artists.name} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
+        artists.name
+      )
       .limit(5),
 
+    // Artworks: deduplicated, prioritize prefix matches
     db
-      .select({
+      .selectDistinctOn([artworks.id], {
         id: artworks.id,
         title: artworks.title,
         slug: artworks.slug,
         year: artworks.year,
-        artistName: artists.name,
+        artistName: sql<string>`${artists.name}`.as("artist_name"),
       })
       .from(artworks)
       .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
       .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-      .where(
-        or(
-          ilike(artworks.title, pattern),
-          ilike(artists.name, pattern)
-        )
+      .where(ilike(artworks.title, containsPattern))
+      .orderBy(
+        artworks.id,
+        sql`CASE WHEN ${artworks.title} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`
       )
-      .orderBy(artworks.title)
       .limit(6),
 
+    // Styles
     db
       .select({
         id: styles.id,
@@ -51,10 +67,14 @@ export async function GET(request: NextRequest) {
         slug: styles.slug,
       })
       .from(styles)
-      .where(ilike(styles.name, pattern))
-      .orderBy(styles.name)
+      .where(ilike(styles.name, containsPattern))
+      .orderBy(
+        sql`CASE WHEN ${styles.name} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
+        styles.name
+      )
       .limit(4),
 
+    // Genres
     db
       .select({
         id: genres.id,
@@ -62,8 +82,11 @@ export async function GET(request: NextRequest) {
         slug: genres.slug,
       })
       .from(genres)
-      .where(ilike(genres.name, pattern))
-      .orderBy(genres.name)
+      .where(ilike(genres.name, containsPattern))
+      .orderBy(
+        sql`CASE WHEN ${genres.name} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
+        genres.name
+      )
       .limit(4),
   ]);
 
