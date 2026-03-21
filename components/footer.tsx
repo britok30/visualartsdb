@@ -101,8 +101,23 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Support */}
+        <div className="mt-16 border-t border-neutral-100 pt-8 text-center">
+          <p className="text-sm text-neutral-400">
+            {SITE_NAME} is free and open for everyone.
+          </p>
+          <a
+            href="https://buy.stripe.com/6oU3cwfe41DU0io0IA7ok00"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block rounded-md bg-neutral-900 px-5 py-2 text-sm text-white transition-colors hover:bg-neutral-800"
+          >
+            Support the project
+          </a>
+        </div>
+
         {/* Bottom */}
-        <div className="mt-16 border-t border-neutral-100 pt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+        <div className="mt-8 border-t border-neutral-100 pt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-xs text-neutral-300">
             &copy; {new Date().getFullYear()} {SITE_NAME}
           </p>

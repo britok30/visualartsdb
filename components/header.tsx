@@ -21,6 +21,14 @@ export function Header() {
             <Link href="/browse/genres" className="text-neutral-400 transition-colors hover:text-neutral-900">Genres</Link>
             <Link href="/browse/museums" className="text-neutral-400 transition-colors hover:text-neutral-900">Museums</Link>
             <Link href="/browse/artists" className="text-neutral-400 transition-colors hover:text-neutral-900">Artists</Link>
+            <a
+              href="https://buy.stripe.com/6oU3cwfe41DU0io0IA7ok00"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 transition-colors hover:text-neutral-900"
+            >
+              Support
+            </a>
           </nav>
           <div className="flex items-center gap-4">
             <Link

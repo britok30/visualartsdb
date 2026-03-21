@@ -14,6 +14,7 @@ const links = [
   { label: "Museums", href: "/browse/museums" },
   { label: "Artists", href: "/browse/artists" },
   { label: "Favorites", href: "/favorites" },
+  { label: "Support", href: "https://buy.stripe.com/6oU3cwfe41DU0io0IA7ok00" },
 ];
 
 export function MobileNav() {
