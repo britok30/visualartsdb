@@ -8,7 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
-    default: SITE_NAME,
+    default: `${SITE_NAME} — Explore the World's Art`,
     template: `%s — ${SITE_NAME}`,
   },
   description: `Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums. Browse Impressionism, Surrealism, Baroque, and more.`,
