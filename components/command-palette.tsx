@@ -180,7 +180,7 @@ export function CommandPalette({ children }: { children: React.ReactNode }) {
       <DynamicSearchActions />
       <KBarPortal>
         <KBarPositioner className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm">
-          <KBarAnimator className="mx-auto w-full max-w-lg overflow-hidden bg-white shadow-2xl">
+          <KBarAnimator className="mx-4 sm:mx-auto w-full max-w-lg overflow-hidden bg-white shadow-2xl">
             <KBarSearch
               className="w-full border-b border-neutral-100 px-5 py-4 text-sm outline-none placeholder:text-neutral-300"
               defaultPlaceholder="Search artists, artworks, styles..."

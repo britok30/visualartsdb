@@ -92,7 +92,7 @@ export function CiteButton(props: CiteButtonProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-10 z-10 w-80 border border-neutral-100 bg-white p-4 shadow-lg"
+            className="absolute right-0 top-10 z-10 w-[calc(100vw-3rem)] sm:w-80 border border-neutral-100 bg-white p-4 shadow-lg"
           >
             <h4 className="text-xs uppercase tracking-widest text-neutral-300">
               Cite this artwork

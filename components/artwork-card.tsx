@@ -29,7 +29,7 @@ export function ArtworkCard({
 }: ArtworkCardProps) {
   const src = imageUrl || thumbnailUrl;
   const sizeClass =
-    size === "tall" ? "h-[420px] w-[280px]" : "h-[320px] w-full";
+    size === "tall" ? "h-[320px] w-[220px] sm:h-[420px] sm:w-[280px]" : "h-[320px] w-full";
 
   return (
     <div className="group relative shrink-0">
@@ -52,7 +52,7 @@ export function ArtworkCard({
             </div>
           )}
         </div>
-        <div className="mt-3 max-w-70">
+        <div className="mt-3 max-w-55 sm:max-w-70">
           <h3 className="text-sm leading-snug text-neutral-900 line-clamp-2 wrap-break-word">
             {title}
           </h3>
