@@ -7,6 +7,10 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.visualartsdb.com"),
+  alternates: {
+    canonical: "/",
+  },
   title: {
     default: `${SITE_NAME} — Explore the World's Art`,
     template: `%s — ${SITE_NAME}`,

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/"],
     },
-    sitemap: "https://visualartsdb.com/sitemap.xml",
+    sitemap: "https://www.visualartsdb.com/sitemap.xml",
   };
 }

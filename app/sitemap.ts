@@ -11,7 +11,7 @@ import {
 } from "@/lib/db/schema";
 import { count, eq, sql, isNotNull } from "drizzle-orm";
 
-const BASE_URL = "https://visualartsdb.com";
+const BASE_URL = "https://www.visualartsdb.com";
 const BATCH_SIZE = 50000;
 
 export async function generateSitemaps() {
