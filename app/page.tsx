@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: `Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
+export const revalidate = 60;
+
 const STYLE_SECTIONS = [
   { name: "Impressionism", slug: "impressionism" },
   { name: "Romanticism", slug: "romanticism" },

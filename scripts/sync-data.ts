@@ -215,6 +215,27 @@ async function main() {
     await syncJoinTable(table);
   }
 
+  // Clean orphaned rows before restoring FK constraints
+  console.log("\n🧹 Cleaning orphaned rows...");
+  const cleanups = [
+    `DELETE FROM artwork_artists WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
+    `DELETE FROM artwork_artists WHERE artist_id NOT IN (SELECT id FROM artists)`,
+    `DELETE FROM artwork_styles WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
+    `DELETE FROM artwork_styles WHERE style_id NOT IN (SELECT id FROM styles)`,
+    `DELETE FROM artwork_tags WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
+    `DELETE FROM artwork_tags WHERE tag_id NOT IN (SELECT id FROM tags)`,
+    `DELETE FROM artist_styles WHERE artist_id NOT IN (SELECT id FROM artists)`,
+    `DELETE FROM artist_styles WHERE style_id NOT IN (SELECT id FROM styles)`,
+    `UPDATE artworks SET genre_id = NULL WHERE genre_id IS NOT NULL AND genre_id NOT IN (SELECT id FROM genres)`,
+    `UPDATE artworks SET museum_id = NULL WHERE museum_id IS NOT NULL AND museum_id NOT IN (SELECT id FROM museums)`,
+  ];
+  for (const q of cleanups) {
+    const r = await target.query(q);
+    if (r.rowCount && r.rowCount > 0) {
+      console.log(`   ${q.slice(0, 50)}... (${r.rowCount} rows)`);
+    }
+  }
+
   // Restore FK constraints
   console.log();
   await restoreForeignKeys(fks);
