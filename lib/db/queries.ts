@@ -16,7 +16,7 @@ import {
 // ─── Home ────────────────────────────────────────────────────────
 
 export async function getFeaturedArtworks(limit = 12) {
-  return db
+  const sub = db
     .selectDistinctOn([artworks.id], {
       id: artworks.id,
       title: artworks.title,
@@ -24,15 +24,17 @@ export async function getFeaturedArtworks(limit = 12) {
       year: artworks.year,
       imageUrl: artworks.imageUrl,
       thumbnailUrl: artworks.thumbnailUrl,
-      artistName: artists.name,
-      artistSlug: artists.slug,
+      artistName: sql<string>`${artists.name}`.as("artist_name"),
+      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
     })
     .from(artworks)
     .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
     .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
     .where(sql`${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id, sql`RANDOM()`)
-    .limit(limit);
+    .orderBy(artworks.id)
+    .as("sub");
+
+  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
 }
 
 export async function getStats() {
@@ -62,7 +64,7 @@ export async function getStats() {
 }
 
 export async function getArtworksByStyleName(styleName: string, limit = 20) {
-  return db
+  const sub = db
     .selectDistinctOn([artworks.id], {
       id: artworks.id,
       title: artworks.title,
@@ -70,8 +72,8 @@ export async function getArtworksByStyleName(styleName: string, limit = 20) {
       year: artworks.year,
       imageUrl: artworks.imageUrl,
       thumbnailUrl: artworks.thumbnailUrl,
-      artistName: artists.name,
-      artistSlug: artists.slug,
+      artistName: sql<string>`${artists.name}`.as("artist_name"),
+      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
     })
     .from(artworks)
     .innerJoin(artworkStyles, eq(artworks.id, artworkStyles.artworkId))
@@ -79,12 +81,14 @@ export async function getArtworksByStyleName(styleName: string, limit = 20) {
     .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
     .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
     .where(sql`${styles.name} = ${styleName} AND ${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id, sql`RANDOM()`)
-    .limit(limit);
+    .orderBy(artworks.id)
+    .as("sub");
+
+  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
 }
 
 export async function getArtworksByGenreName(genreName: string, limit = 20) {
-  return db
+  const sub = db
     .selectDistinctOn([artworks.id], {
       id: artworks.id,
       title: artworks.title,
@@ -92,16 +96,18 @@ export async function getArtworksByGenreName(genreName: string, limit = 20) {
       year: artworks.year,
       imageUrl: artworks.imageUrl,
       thumbnailUrl: artworks.thumbnailUrl,
-      artistName: artists.name,
-      artistSlug: artists.slug,
+      artistName: sql<string>`${artists.name}`.as("artist_name"),
+      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
     })
     .from(artworks)
     .innerJoin(genres, eq(artworks.genreId, genres.id))
     .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
     .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
     .where(sql`${genres.name} = ${genreName} AND ${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id, sql`RANDOM()`)
-    .limit(limit);
+    .orderBy(artworks.id)
+    .as("sub");
+
+  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
 }
 
 // ─── Artwork ─────────────────────────────────────────────────────

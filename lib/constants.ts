@@ -1,10 +1,10 @@
 // Single source of truth for site-wide stats used in metadata & copy.
 // Update these after each sync to keep SEO descriptions accurate.
 export const SITE_STATS = {
-  artworks: "290,000+",
-  artists: "28,000+",
+  artworks: "370,000+",
+  artists: "33,000+",
   styles: "790+",
-  genres: "900+",
+  genres: "910+",
   museums: "240+",
 } as const;
 

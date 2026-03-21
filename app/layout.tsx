@@ -4,6 +4,7 @@ import { Footer } from "@/components/footer";
 import { CommandPalette } from "@/components/command-palette";
 import { SITE_NAME, SITE_STATS } from "@/lib/constants";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -35,6 +36,7 @@ export default function RootLayout({
           <main>{children}</main>
           <Footer />
         </CommandPalette>
+        <Analytics />
       </body>
     </html>
   );
