@@ -16,7 +16,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const artwork = await getArtworkBySlug(slug);
-  console.log("Generating metadata for artwork:", slug, artwork);
+
   if (!artwork) return { title: "Not Found" };
 
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
@@ -53,8 +53,6 @@ export default async function ArtworkPage({
       ? `${artwork.year}–${artwork.yearTo}`
       : String(artwork.year)
     : null;
-
-
 
   return (
     <div>
