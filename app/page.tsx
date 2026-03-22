@@ -26,6 +26,12 @@ const STYLE_SECTIONS = [
   { name: "Cubism", slug: "cubism" },
   { name: "Surrealism", slug: "surrealism" },
   { name: "Modernism", slug: "modernism" },
+  { name: "Post-Impressionism", slug: "post-impressionism" },
+  { name: "Abstract Expressionism", slug: "abstract-expressionism" },
+  { name: "Naïve Art (Primitivism)", slug: "naive-art-primitivism" },
+  { name: "Japanese Art", slug: "japanese-art" },
+  { name: "Chinese Art", slug: "chinese-art" },
+  { name: "Indian and Southeast Asian Art", slug: "indian-and-southeast-asian-art" },
 ];
 
 const GENRE_SECTIONS = [

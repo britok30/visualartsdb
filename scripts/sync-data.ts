@@ -1,7 +1,17 @@
 import { Pool } from "@neondatabase/serverless";
 
-const source = new Pool({ connectionString: process.env.SCRAPE_DATABASE_URL });
-const target = new Pool({ connectionString: process.env.DATABASE_URL });
+const source = new Pool({
+  connectionString: process.env.SCRAPE_DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 0,
+  connectionTimeoutMillis: 30000,
+});
+const target = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 0,
+  connectionTimeoutMillis: 30000,
+});
 
 // Order: parents first, join tables last
 const entityTables = [
@@ -24,7 +34,7 @@ const joinTables = [
   "artist_movements",
 ];
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 2000;
 
 async function getColumns(table: string): Promise<string[]> {
   const { rows } = await source.query(
