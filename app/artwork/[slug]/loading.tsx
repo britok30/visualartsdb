@@ -4,7 +4,7 @@ export default function ArtworkLoading() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="grid gap-16 lg:grid-cols-[1fr_360px]">
-        <Skeleton className="h-[500px] w-full rounded-none" />
+        <Skeleton className="h-125 w-full rounded-none" />
         <div className="space-y-6">
           <Skeleton className="h-9 w-3/4" />
           <Skeleton className="h-5 w-1/2" />

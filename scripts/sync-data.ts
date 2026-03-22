@@ -216,23 +216,26 @@ async function main() {
   }
 
   // Clean orphaned rows before restoring FK constraints
+  // Uses NOT EXISTS (index-friendly) instead of NOT IN (full scan)
   console.log("\n🧹 Cleaning orphaned rows...");
   const cleanups = [
-    `DELETE FROM artwork_artists WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
-    `DELETE FROM artwork_artists WHERE artist_id NOT IN (SELECT id FROM artists)`,
-    `DELETE FROM artwork_styles WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
-    `DELETE FROM artwork_styles WHERE style_id NOT IN (SELECT id FROM styles)`,
-    `DELETE FROM artwork_tags WHERE artwork_id NOT IN (SELECT id FROM artworks)`,
-    `DELETE FROM artwork_tags WHERE tag_id NOT IN (SELECT id FROM tags)`,
-    `DELETE FROM artist_styles WHERE artist_id NOT IN (SELECT id FROM artists)`,
-    `DELETE FROM artist_styles WHERE style_id NOT IN (SELECT id FROM styles)`,
-    `UPDATE artworks SET genre_id = NULL WHERE genre_id IS NOT NULL AND genre_id NOT IN (SELECT id FROM genres)`,
-    `UPDATE artworks SET museum_id = NULL WHERE museum_id IS NOT NULL AND museum_id NOT IN (SELECT id FROM museums)`,
+    `DELETE FROM artwork_artists aa WHERE NOT EXISTS (SELECT 1 FROM artworks a WHERE a.id = aa.artwork_id)`,
+    `DELETE FROM artwork_artists aa WHERE NOT EXISTS (SELECT 1 FROM artists a WHERE a.id = aa.artist_id)`,
+    `DELETE FROM artwork_styles ast WHERE NOT EXISTS (SELECT 1 FROM artworks a WHERE a.id = ast.artwork_id)`,
+    `DELETE FROM artwork_styles ast WHERE NOT EXISTS (SELECT 1 FROM styles s WHERE s.id = ast.style_id)`,
+    `DELETE FROM artwork_tags at2 WHERE NOT EXISTS (SELECT 1 FROM artworks a WHERE a.id = at2.artwork_id)`,
+    `DELETE FROM artwork_tags at2 WHERE NOT EXISTS (SELECT 1 FROM tags t WHERE t.id = at2.tag_id)`,
+    `DELETE FROM artist_styles ast WHERE NOT EXISTS (SELECT 1 FROM artists a WHERE a.id = ast.artist_id)`,
+    `DELETE FROM artist_styles ast WHERE NOT EXISTS (SELECT 1 FROM styles s WHERE s.id = ast.style_id)`,
+    `UPDATE artworks SET genre_id = NULL WHERE genre_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM genres g WHERE g.id = artworks.genre_id)`,
+    `UPDATE artworks SET museum_id = NULL WHERE museum_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM museums m WHERE m.id = artworks.museum_id)`,
   ];
   for (const q of cleanups) {
+    const start = Date.now();
     const r = await target.query(q);
+    const ms = Date.now() - start;
     if (r.rowCount && r.rowCount > 0) {
-      console.log(`   ${q.slice(0, 50)}... (${r.rowCount} rows)`);
+      console.log(`   ${q.slice(12, 55)}... (${r.rowCount} rows, ${ms}ms)`);
     }
   }
 

@@ -16,6 +16,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const artwork = await getArtworkBySlug(slug);
+  console.log("Generating metadata for artwork:", slug, artwork);
   if (!artwork) return { title: "Not Found" };
 
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
@@ -44,7 +45,7 @@ export default async function ArtworkPage({
   const related = await getRelatedArtworks(
     artwork.id,
     artwork.artists.map((a) => a.id),
-    12
+    12,
   );
 
   const yearDisplay = artwork.year
@@ -52,6 +53,8 @@ export default async function ArtworkPage({
       ? `${artwork.year}–${artwork.yearTo}`
       : String(artwork.year)
     : null;
+
+
 
   return (
     <div>
@@ -201,10 +204,7 @@ export default async function ArtworkPage({
                 </span>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                   {artwork.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="text-xs text-neutral-400"
-                    >
+                    <span key={tag.id} className="text-xs text-neutral-400">
                       {tag.name}
                     </span>
                   ))}
