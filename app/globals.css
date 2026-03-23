@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwind-scrollbar";
 
 @theme inline {
   --font-serif: "Times New Roman", Times, Georgia, serif;
@@ -15,7 +16,7 @@
   }
 }
 
-/* Hide scrollbar on horizontal scroll */
+/* Hide scrollbar on horizontal scroll rows */
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
