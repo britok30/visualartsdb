@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const containsPattern = `%${q}%`;
 
   const [artistRows, artworkRows, styleRows, genreRows] = await Promise.all([
-    // Artists: prefix match first (fast), then contains
+    // Artists: prioritize short clean names and prefix matches
     db
       .select({
         id: artists.id,
@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       .from(artists)
       .where(ilike(artists.name, containsPattern))
       .orderBy(
+        sql`length(${artists.name})`,
         sql`CASE WHEN ${artists.name} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`,
         artists.name
       )
