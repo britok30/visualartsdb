@@ -18,6 +18,7 @@ export async function generateMetadata({
   const artist = await getArtistBySlug(slug);
   if (!artist) return { title: "Not Found" };
   return {
+    alternates: { canonical: `/artist/${slug}` },
     title: artist.name,
     description:
       artist.bio ? convert(artist.bio, { wordwrap: false }).slice(0, 160) :

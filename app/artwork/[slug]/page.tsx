@@ -21,6 +21,7 @@ export async function generateMetadata({
 
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
   return {
+    alternates: { canonical: `/artwork/${slug}` },
     title: `${artwork.title} by ${artistNames}`,
     description: artwork.description
       ? convert(artwork.description, { wordwrap: false }).slice(0, 160)

@@ -15,6 +15,7 @@ export async function generateMetadata({
   if (!result) return { title: "Not Found" };
   const location = [result.museum.city, result.museum.country].filter(Boolean).join(", ");
   return {
+    alternates: { canonical: `/browse/museums/${slug}` },
     title: result.museum.name,
     description: `Browse ${result.total.toLocaleString()} artworks from ${result.museum.name}${location ? ` in ${location}` : ""} on VisualArtsDB.`,
   };

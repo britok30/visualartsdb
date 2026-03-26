@@ -8,6 +8,7 @@ import { artists } from "@/lib/db/schema";
 import { asc, count, ilike } from "drizzle-orm";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/browse/artists" },
   title: "Browse Artists",
   description:
     `Explore ${SITE_STATS.artists} artists from around the world — painters, sculptors, and visual artists across all periods and movements.`,

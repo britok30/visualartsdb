@@ -14,6 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { q } = await searchParams;
   return {
+    robots: { index: false, follow: true },
     title: q ? `"${q}" — Search` : "Search",
     description: q
       ? `Search results for "${q}" on VisualArtsDB.`

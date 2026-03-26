@@ -4,6 +4,7 @@ import { SITE_STATS } from "@/lib/constants";
 import { getGenresWithCounts } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/browse/genres" },
   title: "Browse Genres",
   description: `Explore artworks by genre and subject matter — portraits, landscapes, still life, religious art, and ${SITE_STATS.genres} more categories.`,
 };

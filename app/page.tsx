@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   title: `${SITE_NAME} — Explore the World's Art`,
   description: `Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };

@@ -4,6 +4,7 @@ import { SITE_STATS } from "@/lib/constants";
 import { getMuseumsWithCounts } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/browse/museums" },
   title: "Browse Museums",
   description: `Explore artworks by museum — Art Institute of Chicago, MoMA, Rijksmuseum, the MET, Cleveland Museum of Art, and ${SITE_STATS.museums} more institutions.`,
 };

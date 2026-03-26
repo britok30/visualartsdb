@@ -4,6 +4,7 @@ import { SITE_STATS } from "@/lib/constants";
 import { getStylesWithCounts } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/browse/styles" },
   title: "Browse Styles",
   description: `Explore artworks by artistic style — Impressionism, Surrealism, Cubism, Baroque, Pop Art, Realism, and ${SITE_STATS.styles} more movements.`,
 };

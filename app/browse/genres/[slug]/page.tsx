@@ -14,6 +14,7 @@ export async function generateMetadata({
   const result = await getArtworksByGenre(slug);
   if (!result) return { title: "Not Found" };
   return {
+    alternates: { canonical: `/browse/genres/${slug}` },
     title: result.genre.name,
     description: result.genre.description
       ? result.genre.description.slice(0, 160)
