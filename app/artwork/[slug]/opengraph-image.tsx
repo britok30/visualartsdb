@@ -19,14 +19,33 @@ async function fetchImageAsDataUri(
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
-    const contentType = res.headers.get("content-type")?.split(";")[0].trim();
-    if (!contentType || !SUPPORTED_TYPES.has(contentType)) return null;
+    const ct = res.headers.get("content-type")?.split(";")[0].trim();
+    if (!ct || !SUPPORTED_TYPES.has(ct)) return null;
     const buf = await res.arrayBuffer();
     const base64 = Buffer.from(buf).toString("base64");
-    return `data:${contentType};base64,${base64}`;
+    return `data:${ct};base64,${base64}`;
   } catch {
     return null;
   }
+}
+
+function Fallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#fafafa",
+        fontSize: 32,
+        color: "#a3a3a3",
+      }}
+    >
+      VisualArtsDB
+    </div>
+  );
 }
 
 export default async function Image({
@@ -38,25 +57,7 @@ export default async function Image({
   const artwork = await getArtworkBySlug(slug);
 
   if (!artwork) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "#fafafa",
-            fontSize: 32,
-            color: "#a3a3a3",
-          }}
-        >
-          VisualArtsDB
-        </div>
-      ),
-      size,
-    );
+    return new ImageResponse(<Fallback />, size);
   }
 
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
@@ -64,17 +65,23 @@ export default async function Image({
     ? await fetchImageAsDataUri(artwork.imageUrl)
     : null;
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#fafafa",
-        }}
-      >
-        {imageDataUri && (
+  const year = artwork.year
+    ? artwork.yearTo
+      ? `${artwork.year}–${artwork.yearTo}`
+      : String(artwork.year)
+    : "";
+
+  if (imageDataUri) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fafafa",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -96,55 +103,58 @@ export default async function Image({
               }}
             />
           </div>
-        )}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: 48,
-            width: imageDataUri ? "50%" : "100%",
-          }}
-        >
           <div
             style={{
-              fontSize: 36,
-              fontStyle: "italic",
-              color: "#171717",
-              lineClamp: 3,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: 48,
+              width: "50%",
             }}
           >
-            {artwork.title}
-          </div>
-          <div
-            style={{
-              fontSize: 22,
-              color: "#737373",
-              marginTop: 16,
-            }}
-          >
-            {artistNames}
-          </div>
-          {artwork.year && (
-            <div
-              style={{
-                fontSize: 18,
-                color: "#a3a3a3",
-                marginTop: 8,
-              }}
-            >
-              {artwork.year}
+            <div style={{ fontSize: 36, fontStyle: "italic", color: "#171717" }}>
+              {artwork.title}
             </div>
-          )}
-          <div
-            style={{
-              fontSize: 16,
-              color: "#d4d4d4",
-              marginTop: 32,
-            }}
-          >
-            VisualArtsDB
+            <div style={{ fontSize: 22, color: "#737373", marginTop: 16 }}>
+              {artistNames}
+            </div>
+            <div style={{ fontSize: 18, color: "#a3a3a3", marginTop: 8 }}>
+              {year}
+            </div>
+            <div style={{ fontSize: 16, color: "#d4d4d4", marginTop: 32 }}>
+              VisualArtsDB
+            </div>
           </div>
+        </div>
+      ),
+      size,
+    );
+  }
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#fafafa",
+          padding: 48,
+        }}
+      >
+        <div style={{ fontSize: 36, fontStyle: "italic", color: "#171717" }}>
+          {artwork.title}
+        </div>
+        <div style={{ fontSize: 22, color: "#737373", marginTop: 16 }}>
+          {artistNames}
+        </div>
+        <div style={{ fontSize: 18, color: "#a3a3a3", marginTop: 8 }}>
+          {year}
+        </div>
+        <div style={{ fontSize: 16, color: "#d4d4d4", marginTop: 32 }}>
+          VisualArtsDB
         </div>
       </div>
     ),

@@ -29,6 +29,25 @@ async function fetchImageAsDataUri(
   }
 }
 
+function Fallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#fafafa",
+        fontSize: 32,
+        color: "#a3a3a3",
+      }}
+    >
+      VisualArtsDB
+    </div>
+  );
+}
+
 export default async function Image({
   params,
 }: {
@@ -38,25 +57,7 @@ export default async function Image({
   const artist = await getArtistBySlug(slug);
 
   if (!artist) {
-    return new ImageResponse(
-      (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "#fafafa",
-            fontSize: 32,
-            color: "#a3a3a3",
-          }}
-        >
-          VisualArtsDB
-        </div>
-      ),
-      size,
-    );
+    return new ImageResponse(<Fallback />, size);
   }
 
   const lifespan = [
@@ -66,21 +67,24 @@ export default async function Image({
     .filter(Boolean)
     .join(" — ");
 
+  const subtitle = [artist.nationality, lifespan].filter(Boolean).join(" · ");
+  const styleNames = artist.styles.slice(0, 4).map((s) => s.name).join(", ");
+
   const portraitDataUri = artist.portraitUrl
     ? await fetchImageAsDataUri(artist.portraitUrl)
     : null;
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#fafafa",
-        }}
-      >
-        {portraitDataUri && (
+  if (portraitDataUri) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            display: "flex",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fafafa",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -103,67 +107,58 @@ export default async function Image({
               }}
             />
           </div>
-        )}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: 48,
-            width: portraitDataUri ? "60%" : "100%",
-          }}
-        >
           <div
             style={{
-              fontSize: 42,
-              fontStyle: "italic",
-              color: "#171717",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: 48,
+              width: "60%",
             }}
           >
-            {artist.name}
-          </div>
-          <div
-            style={{
-              fontSize: 22,
-              color: "#737373",
-              marginTop: 16,
-            }}
-          >
-            {[artist.nationality, lifespan].filter(Boolean).join(" · ")}
-          </div>
-          {artist.styles.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginTop: 20,
-              }}
-            >
-              {artist.styles.slice(0, 4).map((style) => (
-                <div
-                  key={style.id}
-                  style={{
-                    fontSize: 14,
-                    color: "#a3a3a3",
-                    borderBottom: "1px solid #e5e5e5",
-                    paddingBottom: 2,
-                  }}
-                >
-                  {style.name}
-                </div>
-              ))}
+            <div style={{ fontSize: 42, fontStyle: "italic", color: "#171717" }}>
+              {artist.name}
             </div>
-          )}
-          <div
-            style={{
-              fontSize: 16,
-              color: "#d4d4d4",
-              marginTop: 32,
-            }}
-          >
-            VisualArtsDB
+            <div style={{ fontSize: 22, color: "#737373", marginTop: 16 }}>
+              {subtitle}
+            </div>
+            <div style={{ fontSize: 14, color: "#a3a3a3", marginTop: 20 }}>
+              {styleNames}
+            </div>
+            <div style={{ fontSize: 16, color: "#d4d4d4", marginTop: 32 }}>
+              VisualArtsDB
+            </div>
           </div>
+        </div>
+      ),
+      size,
+    );
+  }
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#fafafa",
+          padding: 48,
+        }}
+      >
+        <div style={{ fontSize: 42, fontStyle: "italic", color: "#171717" }}>
+          {artist.name}
+        </div>
+        <div style={{ fontSize: 22, color: "#737373", marginTop: 16 }}>
+          {subtitle}
+        </div>
+        <div style={{ fontSize: 14, color: "#a3a3a3", marginTop: 20 }}>
+          {styleNames}
+        </div>
+        <div style={{ fontSize: 16, color: "#d4d4d4", marginTop: 32 }}>
+          VisualArtsDB
         </div>
       </div>
     ),
