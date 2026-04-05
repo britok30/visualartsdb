@@ -7,7 +7,11 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { CiteButton } from "@/components/cite-button";
 import { DownloadButton } from "@/components/download-button";
 import { ScrollRow } from "@/components/scroll-row";
+import { JsonLd } from "@/components/json-ld";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworkBySlug, getRelatedArtworks } from "@/lib/db/queries";
+
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -26,11 +30,6 @@ export async function generateMetadata({
     description: artwork.description
       ? convert(artwork.description, { wordwrap: false }).slice(0, 160)
       : `${artwork.title} by ${artistNames}`,
-    openGraph: artwork.imageUrl
-      ? {
-          images: [{ url: artwork.imageUrl, alt: artwork.title }],
-        }
-      : undefined,
   };
 }
 
@@ -57,8 +56,46 @@ export default async function ArtworkPage({
 
   return (
     <div>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "VisualArtwork",
+          name: artwork.title,
+          image: artwork.imageUrl || undefined,
+          dateCreated: yearDisplay || undefined,
+          creator: artwork.artists.map((a) => ({
+            "@type": "Person",
+            name: a.name,
+            url: `https://www.visualartsdb.com/artist/${a.slug}`,
+          })),
+          artMedium: artwork.medium || undefined,
+          artform: artwork.genre?.name || undefined,
+          width: artwork.dimensions || undefined,
+          ...(artwork.museum && {
+            isPartOf: {
+              "@type": "Collection",
+              name: artwork.museum.name,
+              url: `https://www.visualartsdb.com/browse/museums/${artwork.museum.slug}`,
+            },
+          }),
+        }}
+      />
       <div className="mx-auto max-w-6xl px-6 py-16">
-        <div className="grid gap-16 lg:grid-cols-[1fr_360px]">
+        <Breadcrumbs
+          items={[
+            { name: "Home", href: "/" },
+            ...(artwork.genre
+              ? [
+                  {
+                    name: artwork.genre.name,
+                    href: `/browse/genres/${artwork.genre.slug}`,
+                  },
+                ]
+              : []),
+            { name: artwork.title },
+          ]}
+        />
+        <div className="mt-8 grid gap-16 lg:grid-cols-[1fr_360px]">
           {/* Image */}
           <div className="flex items-start justify-center">
             {artwork.imageUrl ? (

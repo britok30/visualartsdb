@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { SITE_STATS } from "@/lib/constants";
 import { getStylesWithCounts } from "@/lib/db/queries";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   alternates: { canonical: "/browse/styles" },
   title: "Browse Styles",

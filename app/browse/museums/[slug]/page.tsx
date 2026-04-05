@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { ArtworkCard } from "@/components/artwork-card";
 import { Pagination } from "@/components/pagination";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworksByMuseum } from "@/lib/db/queries";
+
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -41,12 +43,13 @@ export default async function MuseumDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
-      <Link
-        href="/browse/museums"
-        className="text-xs text-neutral-300 transition-colors hover:text-neutral-600"
-      >
-        &larr; All museums
-      </Link>
+      <Breadcrumbs
+        items={[
+          { name: "Home", href: "/" },
+          { name: "Museums", href: "/browse/museums" },
+          { name: museum.name },
+        ]}
+      />
       <h1 className="mt-4 text-4xl italic tracking-tight">{museum.name}</h1>
       {location && <p className="mt-1 text-sm text-neutral-400">{location}</p>}
       <p className="mt-1 text-xs text-neutral-300">

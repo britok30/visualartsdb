@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { ArtworkCard } from "@/components/artwork-card";
 import { Pagination } from "@/components/pagination";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworksByGenre } from "@/lib/db/queries";
+
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -41,12 +43,13 @@ export default async function GenreDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
-      <Link
-        href="/browse/genres"
-        className="text-xs text-neutral-300 transition-colors hover:text-neutral-600"
-      >
-        &larr; All genres
-      </Link>
+      <Breadcrumbs
+        items={[
+          { name: "Home", href: "/" },
+          { name: "Genres", href: "/browse/genres" },
+          { name: genre.name },
+        ]}
+      />
       <h1 className="mt-4 text-4xl italic tracking-tight">{genre.name}</h1>
       {genre.description && (
         <p className="mt-2 max-w-xl text-sm text-neutral-400">

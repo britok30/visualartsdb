@@ -7,7 +7,11 @@ import { ArtworkCard } from "@/components/artwork-card";
 import { FavoriteButton } from "@/components/favorite-button";
 import { Pagination } from "@/components/pagination";
 import { ArtistTimeline } from "@/components/artist-timeline";
+import { JsonLd } from "@/components/json-ld";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtistBySlug, getArtistArtworks, getArtistTimelineArtworks } from "@/lib/db/queries";
+
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -23,11 +27,6 @@ export async function generateMetadata({
     description:
       artist.bio ? convert(artist.bio, { wordwrap: false }).slice(0, 160) :
       `Explore artworks by ${artist.name}.`,
-    openGraph: artist.portraitUrl
-      ? {
-          images: [{ url: artist.portraitUrl, alt: artist.name }],
-        }
-      : undefined,
   };
 }
 
@@ -60,8 +59,28 @@ export default async function ArtistPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: artist.name,
+          image: artist.portraitUrl || undefined,
+          nationality: artist.nationality || undefined,
+          birthDate: artist.birthYear ? String(artist.birthYear) : undefined,
+          deathDate: artist.deathYear ? String(artist.deathYear) : undefined,
+          url: `https://www.visualartsdb.com/artist/${slug}`,
+        }}
+      />
+      <Breadcrumbs
+        items={[
+          { name: "Home", href: "/" },
+          { name: "Artists", href: "/browse/artists" },
+          { name: artist.name },
+        ]}
+      />
+
       {/* Header */}
-      <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
+      <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-start">
         {artist.portraitUrl && (
           <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full bg-neutral-100">
             <ArtworkImage

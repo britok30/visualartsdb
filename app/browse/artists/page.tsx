@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { artists } from "@/lib/db/schema";
 import { asc, count, ilike } from "drizzle-orm";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   alternates: { canonical: "/browse/artists" },
   title: "Browse Artists",

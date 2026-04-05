@@ -1,0 +1,2 @@
+- [Data pipeline and sync strategy](project_data_pipeline.md) — incremental sync only, production is superset of scrape DB
+- [Database setup](project_db_setup.md) — two Neon PG databases (production + scrape), env vars need single-quoting in shell
