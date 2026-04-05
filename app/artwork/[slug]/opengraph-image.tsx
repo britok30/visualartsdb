@@ -5,6 +5,30 @@ export const alt = "Artwork on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const SUPPORTED_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/svg+xml",
+]);
+
+async function fetchImageAsDataUri(
+  url: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type")?.split(";")[0].trim();
+    if (!contentType || !SUPPORTED_TYPES.has(contentType)) return null;
+    const buf = await res.arrayBuffer();
+    const base64 = Buffer.from(buf).toString("base64");
+    return `data:${contentType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image({
   params,
 }: {
@@ -36,6 +60,9 @@ export default async function Image({
   }
 
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
+  const imageDataUri = artwork.imageUrl
+    ? await fetchImageAsDataUri(artwork.imageUrl)
+    : null;
 
   return new ImageResponse(
     (
@@ -47,7 +74,7 @@ export default async function Image({
           backgroundColor: "#fafafa",
         }}
       >
-        {artwork.imageUrl && (
+        {imageDataUri && (
           <div
             style={{
               display: "flex",
@@ -60,7 +87,7 @@ export default async function Image({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={artwork.imageUrl}
+              src={imageDataUri}
               alt={artwork.title}
               style={{
                 maxWidth: "100%",
@@ -76,7 +103,7 @@ export default async function Image({
             flexDirection: "column",
             justifyContent: "center",
             padding: 48,
-            width: artwork.imageUrl ? "50%" : "100%",
+            width: imageDataUri ? "50%" : "100%",
           }}
         >
           <div

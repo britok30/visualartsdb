@@ -5,6 +5,30 @@ export const alt = "Artist on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const SUPPORTED_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/svg+xml",
+]);
+
+async function fetchImageAsDataUri(
+  url: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type")?.split(";")[0].trim();
+    if (!ct || !SUPPORTED_TYPES.has(ct)) return null;
+    const buf = await res.arrayBuffer();
+    const base64 = Buffer.from(buf).toString("base64");
+    return `data:${ct};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Image({
   params,
 }: {
@@ -42,6 +66,10 @@ export default async function Image({
     .filter(Boolean)
     .join(" — ");
 
+  const portraitDataUri = artist.portraitUrl
+    ? await fetchImageAsDataUri(artist.portraitUrl)
+    : null;
+
   return new ImageResponse(
     (
       <div
@@ -52,7 +80,7 @@ export default async function Image({
           backgroundColor: "#fafafa",
         }}
       >
-        {artist.portraitUrl && (
+        {portraitDataUri && (
           <div
             style={{
               display: "flex",
@@ -65,7 +93,7 @@ export default async function Image({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={artist.portraitUrl}
+              src={portraitDataUri}
               alt={artist.name}
               style={{
                 width: 280,
@@ -82,7 +110,7 @@ export default async function Image({
             flexDirection: "column",
             justifyContent: "center",
             padding: 48,
-            width: artist.portraitUrl ? "60%" : "100%",
+            width: portraitDataUri ? "60%" : "100%",
           }}
         >
           <div
