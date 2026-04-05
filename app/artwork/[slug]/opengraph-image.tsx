@@ -5,33 +5,40 @@ export const alt = "Artwork on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const SUPPORTED_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/gif",
-  "image/svg+xml",
-]);
+// Magic bytes for formats Satori actually supports
+const MAGIC = {
+  png: [0x89, 0x50, 0x4e, 0x47],
+  jpeg: [0xff, 0xd8, 0xff],
+  gif: [0x47, 0x49, 0x46, 0x38],
+} as const;
 
-async function fetchImageAsDataUri(
-  url: string,
-): Promise<string | null> {
+function detectMime(bytes: Uint8Array): string | null {
+  if (MAGIC.png.every((b, i) => bytes[i] === b)) return "image/png";
+  if (MAGIC.jpeg.every((b, i) => bytes[i] === b)) return "image/jpeg";
+  if (MAGIC.gif.every((b, i) => bytes[i] === b)) return "image/gif";
+  return null;
+}
+
+async function fetchImageAsDataUri(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
-    const ct = res.headers.get("content-type")?.split(";")[0].trim();
-    if (!ct || !SUPPORTED_TYPES.has(ct)) return null;
     const buf = await res.arrayBuffer();
-    if (buf.byteLength > 4_000_000) return null;
+    if (buf.byteLength < 8 || buf.byteLength > 4_000_000) return null;
+    const mime = detectMime(new Uint8Array(buf));
+    if (!mime) return null;
     const base64 = Buffer.from(buf).toString("base64");
-    return `data:${ct};base64,${base64}`;
+    return `data:${mime};base64,${base64}`;
   } catch {
     return null;
   }
 }
 
 function sanitize(text: string): string {
-  return text.replace(/[\u200B-\u200D\uFEFF]/g, "").slice(0, 200);
+  return text
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[^\p{L}\p{N}\p{P}\p{Z}\p{S}]/gu, "")
+    .slice(0, 200);
 }
 
 interface OgData {
