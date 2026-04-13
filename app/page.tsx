@@ -33,6 +33,12 @@ const STYLE_SECTIONS = [
   { name: "Japanese Art", slug: "japanese-art" },
   { name: "Chinese Art", slug: "chinese-art" },
   { name: "Indian and Southeast Asian Art", slug: "indian-and-southeast-asian-art" },
+  { name: "Abstract Art", slug: "abstract-art" },
+  { name: "Symbolism", slug: "symbolism" },
+  { name: "Academicism", slug: "academicism" },
+  { name: "Minimalism", slug: "minimalism" },
+  { name: "Rococo", slug: "rococo" },
+  { name: "Art Deco", slug: "art-deco" },
 ];
 
 const GENRE_SECTIONS = [
