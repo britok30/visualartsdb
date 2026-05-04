@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Privacy policy for VisualArtsDB — no accounts, no tracking cookies, no personal data collection. GDPR and CCPA compliant by design.",
+    "Privacy policy for VisualArtsDB — what we collect, what we don't, and the third-party services (including Google Analytics) that operate on the site.",
 };
 
 export default function PrivacyPage() {
@@ -11,18 +11,19 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="text-4xl italic tracking-tight">Privacy Policy</h1>
       <p className="mt-2 text-xs text-neutral-300">
-        Last updated — March 20, 2026
+        Last updated — May 4, 2026
       </p>
 
       <div className="mt-12 space-y-10 text-sm leading-relaxed text-neutral-600">
         <section>
           <h2 className="mb-3 text-base text-neutral-900">1. Overview</h2>
           <p>
-            VisualArtsDB is committed to protecting your privacy. This policy
-            explains what information we collect, how we use it, and your rights
-            regarding that information. We have designed VisualArtsDB to operate
-            with minimal data collection — no accounts, no tracking cookies, and
-            no personal data requirements.
+            VisualArtsDB is committed to being transparent about your privacy.
+            This policy explains what information we collect, how we use it, and
+            your rights regarding that information. The site has no user
+            accounts and we do not collect personal information directly. We do
+            use Google Analytics, which sets cookies and collects pseudonymous
+            usage data, as described below.
           </p>
         </section>
 
@@ -35,9 +36,7 @@ export default function PrivacyPage() {
             <li>Names, email addresses, or any personal identifiers</li>
             <li>User accounts, passwords, or authentication credentials</li>
             <li>Payment or financial information</li>
-            <li>Location data or GPS coordinates</li>
-            <li>Browser fingerprints or device identifiers for tracking</li>
-            <li>Search history or browsing behavior tied to individuals</li>
+            <li>Precise location data or GPS coordinates</li>
             <li>Social media profiles or third-party login data</li>
           </ul>
         </section>
@@ -70,16 +69,26 @@ export default function PrivacyPage() {
         <section>
           <h2 className="mb-3 text-base text-neutral-900">4. Cookies</h2>
           <p>
-            VisualArtsDB does not use cookies for tracking, advertising, or
-            analytics. No first-party or third-party tracking cookies are set
-            when you use this platform. Your browser may cache standard assets
-            (stylesheets, fonts, images) for performance, but this is standard
-            browser behavior and contains no personal data.
+            VisualArtsDB itself does not set any first-party cookies. The Google
+            Analytics script we load sets <code>_ga</code> and{" "}
+            <code>_ga_&lt;property-id&gt;</code> cookies in your browser, used
+            to distinguish unique visitors and persist a session identifier
+            (typically valid for two years). We do not run any advertising,
+            personalization, or third-party tracking cookies beyond these.
           </p>
           <p className="mt-3">
-            Because we do not use tracking cookies, no cookie consent banner is
-            required. If this changes in the future, we will update this policy
-            and implement appropriate consent mechanisms.
+            You can block, clear, or restrict these cookies through your
+            browser settings. You can also opt out of Google Analytics
+            specifically using Google&apos;s{" "}
+            <a
+              className="underline"
+              href="https://tools.google.com/dlpage/gaoptout"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              browser opt-out add-on
+            </a>
+            .
           </p>
         </section>
 
@@ -99,23 +108,60 @@ export default function PrivacyPage() {
         <section>
           <h2 className="mb-3 text-base text-neutral-900">6. Analytics</h2>
           <p>
-            We may use privacy-respecting, anonymous analytics to understand
-            aggregate usage patterns — such as which pages are most visited or
-            which search terms are most common. Any analytics we use will be
-            configured to:
+            VisualArtsDB uses <strong>Google Analytics 4</strong> to understand
+            aggregate usage patterns — for example, which pages are most
+            visited, which search terms are most common, and how users navigate
+            the site. Google Analytics collects:
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-5">
-            <li>Not collect personally identifiable information</li>
-            <li>Not use cookies or browser fingerprinting</li>
-            <li>Not share data with advertising networks</li>
-            <li>Not track users across websites</li>
             <li>
-              Comply with GDPR, CCPA, and PECR without requiring consent banners
+              A pseudonymous client identifier stored in a browser cookie
             </li>
+            <li>
+              Pages viewed, time on page, scroll depth, outbound clicks, and
+              site search queries
+            </li>
+            <li>
+              Approximate geographic location (country/region, derived from IP)
+            </li>
+            <li>Device, browser, and operating system information</li>
+            <li>Referring URL</li>
           </ul>
           <p className="mt-3">
-            If we introduce an analytics service, it will be disclosed in this
-            policy by name.
+            IP addresses are not stored or logged by Google Analytics 4 — they
+            are used transiently to derive approximate location and then
+            discarded. We do not link this data to any personal identity, and
+            we do not attempt to re-identify individual visitors. Data is
+            retained in our Google Analytics account for up to 14 months.
+          </p>
+          <p className="mt-3">
+            We also use <strong>Vercel Web Analytics</strong>, which provides
+            aggregate, cookieless traffic measurement on top of our hosting
+            platform.
+          </p>
+          <p className="mt-3">
+            Google&apos;s handling of analytics data is governed by the{" "}
+            <a
+              className="underline"
+              href="https://policies.google.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Privacy Policy
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-base text-neutral-900">
+            6a. Advertising
+          </h2>
+          <p>
+            VisualArtsDB does not currently display advertising. If this
+            changes in the future, this policy will be updated to disclose the
+            advertising network in use and any associated data practices before
+            ads go live.
           </p>
         </section>
 
@@ -145,6 +191,12 @@ export default function PrivacyPage() {
             privacy policy governs any data they collect from these font
             requests.
           </p>
+          <p className="mt-3">
+            In addition to the services above, VisualArtsDB loads scripts from{" "}
+            <strong>Google Analytics</strong> (analytics measurement) and{" "}
+            <strong>Vercel Analytics</strong> (cookieless traffic measurement).
+            See sections 4 and 6 for details on what these services collect.
+          </p>
         </section>
 
         <section>
@@ -165,12 +217,13 @@ export default function PrivacyPage() {
             9. Data Retention
           </h2>
           <p>
-            Since VisualArtsDB does not collect personal data, there is no
-            personal data retention period to define. Artwork metadata in our
-            database is retained indefinitely for the purposes of operating the
-            platform. Server logs managed by our hosting providers are retained
-            according to their standard retention policies and are not accessible
-            to VisualArtsDB.
+            VisualArtsDB itself does not store personal data, so we have no
+            first-party personal data retention period to define. Artwork
+            metadata in our database is retained indefinitely. Analytics data
+            collected by Google Analytics is retained in our account for up to
+            14 months (the configured data retention setting). Server logs
+            managed by our hosting providers are retained according to their
+            standard retention policies and are not accessible to VisualArtsDB.
           </p>
         </section>
 
@@ -179,12 +232,13 @@ export default function PrivacyPage() {
             10. International Data Transfers
           </h2>
           <p>
-            VisualArtsDB&apos;s infrastructure may be distributed across multiple
-            regions. Because we do not collect personal data, international data
-            transfer regulations (such as GDPR cross-border transfer rules) do
-            not apply to user data. Artwork metadata is public information
-            sourced from museum open-access programs and is not subject to data
-            transfer restrictions.
+            VisualArtsDB&apos;s infrastructure is distributed across multiple
+            regions. Data collected by Google Analytics is processed by Google
+            on its global infrastructure, which includes servers in the United
+            States and other countries. Google offers Standard Contractual
+            Clauses and other transfer mechanisms to address cross-border
+            transfer requirements under GDPR; details are available in
+            Google&apos;s privacy and data processing documentation.
           </p>
         </section>
 
@@ -207,17 +261,42 @@ export default function PrivacyPage() {
             12. Your Rights
           </h2>
           <p>
-            Since VisualArtsDB does not collect or store personal data, there is
-            no personal information to access, correct, export, or delete.
+            Because VisualArtsDB does not collect personal data directly, we
+            hold no first-party records to access, correct, export, or delete.
+            For data processed by Google Analytics, your rights (access,
+            deletion, opt-out, etc.) are exercised through Google. Useful
+            starting points:
           </p>
+          <ul className="mt-3 list-disc space-y-2 pl-5">
+            <li>
+              Google Analytics opt-out:{" "}
+              <a
+                className="underline"
+                href="https://tools.google.com/dlpage/gaoptout"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                tools.google.com/dlpage/gaoptout
+              </a>
+            </li>
+            <li>
+              Manage Google account data:{" "}
+              <a
+                className="underline"
+                href="https://myaccount.google.com/data-and-privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                myaccount.google.com/data-and-privacy
+              </a>
+            </li>
+          </ul>
           <p className="mt-3">
             Regardless of your location, you are entitled to the protections of
             applicable privacy laws. For users in the European Economic Area
-            (EEA), this includes the General Data Protection Regulation (GDPR).
-            For California residents, this includes the California Consumer
-            Privacy Act (CCPA) and the California Privacy Rights Act (CPRA). Our
-            minimal data practices are designed to comply with these frameworks
-            by default, without requiring explicit consent mechanisms.
+            (EEA) and the United Kingdom, this includes the GDPR / UK GDPR. For
+            California residents, this includes the California Consumer Privacy
+            Act (CCPA) and the California Privacy Rights Act (CPRA).
           </p>
         </section>
 
@@ -226,10 +305,11 @@ export default function PrivacyPage() {
             13. Do Not Track
           </h2>
           <p>
-            VisualArtsDB honors Do Not Track (DNT) browser signals by default,
-            as we do not engage in any form of user tracking. Your DNT preference
-            has no functional impact on this platform because no tracking occurs
-            regardless of the setting.
+            VisualArtsDB does not currently respond to Do Not Track (DNT)
+            browser signals, because there is no industry-standard
+            interpretation for how DNT applies to third-party analytics. To
+            limit data collection, you can use the opt-out and cookie-blocking
+            options described in sections 4, 6, and 12.
           </p>
         </section>
 
@@ -241,9 +321,11 @@ export default function PrivacyPage() {
             In the unlikely event of a security breach affecting any data
             processed by VisualArtsDB, we will investigate promptly and, where
             required by applicable law, notify relevant authorities within the
-            mandated timeframe (72 hours under GDPR). Since no personal user data
-            is stored, the risk of a breach affecting individual users is
-            negligible.
+            mandated timeframe (72 hours under GDPR). Because we do not store
+            user data ourselves, breach risk on our infrastructure is limited
+            to artwork metadata. Breaches affecting third-party services
+            (Google, Vercel, Neon) are governed by their respective notification
+            obligations.
           </p>
         </section>
 

@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/json-ld";
 import { SITE_NAME, SITE_STATS } from "@/lib/constants";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
-import { AdSense } from "@/components/adsense";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.visualartsdb.com"),
@@ -67,7 +67,7 @@ export default function RootLayout({
           <Footer />
         </CommandPalette>
         <Analytics />
-        <AdSense />
+        <GoogleAnalytics gaId="G-3BLJWV48BK" />
       </body>
     </html>
   );
