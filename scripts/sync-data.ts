@@ -1,17 +1,58 @@
 import { Pool } from "@neondatabase/serverless";
 
-const source = new Pool({
+const sourceConfig = {
   connectionString: process.env.SCRAPE_DATABASE_URL,
   max: 5,
   idleTimeoutMillis: 0,
   connectionTimeoutMillis: 30000,
-});
-const target = new Pool({
+};
+const targetConfig = {
   connectionString: process.env.DATABASE_URL,
   max: 5,
   idleTimeoutMillis: 0,
   connectionTimeoutMillis: 30000,
-});
+};
+
+let source = new Pool(sourceConfig);
+let target = new Pool(targetConfig);
+
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  maxAttempts = 5
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const msg = (err as Error)?.message ?? String(err);
+      const transient =
+        /Connection terminated|ECONNRESET|ETIMEDOUT|socket hang up|terminating connection/i.test(
+          msg
+        );
+      if (!transient || attempt === maxAttempts) throw err;
+
+      const backoff = Math.min(2000 * attempt, 10000);
+      console.log(
+        `\n   ⚠ ${label} attempt ${attempt} failed (${msg.slice(0, 80)}) — retrying in ${backoff}ms`
+      );
+      await new Promise((r) => setTimeout(r, backoff));
+
+      // Recreate pools — WebSocket connections may be dead
+      try {
+        await target.end();
+      } catch {}
+      try {
+        await source.end();
+      } catch {}
+      target = new Pool(targetConfig);
+      source = new Pool(sourceConfig);
+    }
+  }
+  throw lastErr;
+}
 
 // Order: parents first, join tables last
 const entityTables = [
@@ -34,7 +75,7 @@ const joinTables = [
   "artist_movements",
 ];
 
-const BATCH_SIZE = 2000;
+const BATCH_SIZE = 500;
 
 async function getColumns(table: string): Promise<string[]> {
   const { rows } = await source.query(
@@ -64,9 +105,11 @@ async function batchInsert(
 
   const values = rows.flatMap((row) => columns.map((col) => row[col]));
 
-  await target.query(
-    `INSERT INTO "${table}" (${colList}) VALUES ${placeholders} ON CONFLICT DO NOTHING`,
-    values
+  await withRetry(`insert ${table}`, () =>
+    target.query(
+      `INSERT INTO "${table}" (${colList}) VALUES ${placeholders} ON CONFLICT DO NOTHING`,
+      values
+    )
   );
 }
 
@@ -91,9 +134,11 @@ async function syncEntityTable(table: string) {
   let synced = 0;
 
   while (true) {
-    const { rows } = await source.query(
-      `SELECT ${colList} FROM "${table}" WHERE "id" > $1 ORDER BY "id" LIMIT $2`,
-      [cursor, BATCH_SIZE]
+    const { rows } = await withRetry(`select ${table}`, () =>
+      source.query(
+        `SELECT ${colList} FROM "${table}" WHERE "id" > $1 ORDER BY "id" LIMIT $2`,
+        [cursor, BATCH_SIZE]
+      )
     );
 
     if (rows.length === 0) break;
@@ -133,12 +178,14 @@ async function syncJoinTable(table: string) {
   let synced = 0;
 
   while (true) {
-    const { rows } = await source.query(
-      `SELECT ${colList} FROM "${table}"
+    const { rows } = await withRetry(`select ${table}`, () =>
+      source.query(
+        `SELECT ${colList} FROM "${table}"
        WHERE (${col1}, ${col2}) > ($1, $2)
        ORDER BY ${col1}, ${col2}
        LIMIT $3`,
-      [cursor1, cursor2, BATCH_SIZE]
+        [cursor1, cursor2, BATCH_SIZE]
+      )
     );
 
     if (rows.length === 0) break;
