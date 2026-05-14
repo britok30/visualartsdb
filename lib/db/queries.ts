@@ -15,26 +15,43 @@ import {
 
 // ─── Home ────────────────────────────────────────────────────────
 
-export async function getFeaturedArtworks(limit = 12) {
-  const sub = db
-    .selectDistinctOn([artworks.id], {
-      id: artworks.id,
-      title: artworks.title,
-      slug: artworks.slug,
-      year: artworks.year,
-      imageUrl: artworks.imageUrl,
-      thumbnailUrl: artworks.thumbnailUrl,
-      artistName: sql<string>`${artists.name}`.as("artist_name"),
-      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
-    })
-    .from(artworks)
-    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-    .where(sql`${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id)
-    .as("sub");
+export interface HomeArtwork {
+  id: string;
+  title: string;
+  slug: string;
+  year: number | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  artistName: string;
+  artistSlug: string;
+}
 
-  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
+// Hour-based offset for cheap variety on cached homepage queries.
+// Returns a stable value within each hour, rotating across `range` windows.
+function hourlyOffset(range: number): number {
+  const hour = Math.floor(Date.now() / 3_600_000);
+  return ((hour * 7919) % range + range) % range;
+}
+
+export async function getFeaturedArtworks(limit = 12): Promise<HomeArtwork[]> {
+  const offset = hourlyOffset(500);
+  const result = await db.execute(sql`
+    SELECT
+      a.id, a.title, a.slug, a.year,
+      a.image_url AS "imageUrl",
+      a.thumbnail_url AS "thumbnailUrl",
+      (SELECT ar.name FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistName",
+      (SELECT ar.slug FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistSlug"
+    FROM artworks a
+    WHERE a.image_url IS NOT NULL
+    ORDER BY a.id
+    LIMIT ${limit} OFFSET ${offset}
+  `);
+  return result.rows as unknown as HomeArtwork[];
 }
 
 export async function getStats() {
@@ -63,51 +80,55 @@ export async function getStats() {
   };
 }
 
-export async function getArtworksByStyleName(styleName: string, limit = 20) {
-  const sub = db
-    .selectDistinctOn([artworks.id], {
-      id: artworks.id,
-      title: artworks.title,
-      slug: artworks.slug,
-      year: artworks.year,
-      imageUrl: artworks.imageUrl,
-      thumbnailUrl: artworks.thumbnailUrl,
-      artistName: sql<string>`${artists.name}`.as("artist_name"),
-      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
-    })
-    .from(artworks)
-    .innerJoin(artworkStyles, eq(artworks.id, artworkStyles.artworkId))
-    .innerJoin(styles, eq(artworkStyles.styleId, styles.id))
-    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-    .where(sql`${styles.name} = ${styleName} AND ${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id)
-    .as("sub");
-
-  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
+export async function getArtworksByStyleName(
+  styleName: string,
+  limit = 20,
+): Promise<HomeArtwork[]> {
+  const offset = hourlyOffset(100);
+  const result = await db.execute(sql`
+    SELECT
+      a.id, a.title, a.slug, a.year,
+      a.image_url AS "imageUrl",
+      a.thumbnail_url AS "thumbnailUrl",
+      (SELECT ar.name FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistName",
+      (SELECT ar.slug FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistSlug"
+    FROM artworks a
+    INNER JOIN artwork_styles ast ON ast.artwork_id = a.id
+    INNER JOIN styles s ON s.id = ast.style_id
+    WHERE s.name = ${styleName} AND a.image_url IS NOT NULL
+    ORDER BY a.id
+    LIMIT ${limit} OFFSET ${offset}
+  `);
+  return result.rows as unknown as HomeArtwork[];
 }
 
-export async function getArtworksByGenreName(genreName: string, limit = 20) {
-  const sub = db
-    .selectDistinctOn([artworks.id], {
-      id: artworks.id,
-      title: artworks.title,
-      slug: artworks.slug,
-      year: artworks.year,
-      imageUrl: artworks.imageUrl,
-      thumbnailUrl: artworks.thumbnailUrl,
-      artistName: sql<string>`${artists.name}`.as("artist_name"),
-      artistSlug: sql<string>`${artists.slug}`.as("artist_slug"),
-    })
-    .from(artworks)
-    .innerJoin(genres, eq(artworks.genreId, genres.id))
-    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-    .where(sql`${genres.name} = ${genreName} AND ${artworks.imageUrl} IS NOT NULL`)
-    .orderBy(artworks.id)
-    .as("sub");
-
-  return db.select().from(sub).orderBy(sql`RANDOM()`).limit(limit);
+export async function getArtworksByGenreName(
+  genreName: string,
+  limit = 20,
+): Promise<HomeArtwork[]> {
+  const offset = hourlyOffset(100);
+  const result = await db.execute(sql`
+    SELECT
+      a.id, a.title, a.slug, a.year,
+      a.image_url AS "imageUrl",
+      a.thumbnail_url AS "thumbnailUrl",
+      (SELECT ar.name FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistName",
+      (SELECT ar.slug FROM artists ar
+        INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+        WHERE aa.artwork_id = a.id LIMIT 1) AS "artistSlug"
+    FROM artworks a
+    INNER JOIN genres g ON g.id = a.genre_id
+    WHERE g.name = ${genreName} AND a.image_url IS NOT NULL
+    ORDER BY a.id
+    LIMIT ${limit} OFFSET ${offset}
+  `);
+  return result.rows as unknown as HomeArtwork[];
 }
 
 // ─── Artwork ─────────────────────────────────────────────────────

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: `Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 type Section = { name: string; slug: string; title?: string };
 

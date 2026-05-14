@@ -1,48 +1,24 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import {
-  artworks,
-  artists,
-  styles,
-  genres,
-  museums,
-  artworkStyles,
-  artworkArtists,
-} from "@/lib/db/schema";
-import { count, countDistinct, eq, sql, isNotNull } from "drizzle-orm";
+import { artworks, artists, artworkArtists } from "@/lib/db/schema";
+import { eq, sql, isNotNull } from "drizzle-orm";
 
 const BASE_URL = "https://www.visualartsdb.com";
 const BATCH_SIZE = 50000;
 
+// Hardcoded shard counts (avoid expensive count queries during build).
+// Bump these if data grows past the implied caps.
+const ARTIST_SITEMAPS = 3;   // up to 150k artists
+const ARTWORK_SITEMAPS = 30; // up to 1.5M artworks with images
+
 export const revalidate = 86400;
 
 export async function generateSitemaps() {
-  const [artworkCount] = await db
-    .select({ value: count() })
-    .from(artworks)
-    .where(isNotNull(artworks.imageUrl));
-
-  const [artistCount] = await db
-    .select({ value: countDistinct(artworkArtists.artistId) })
-    .from(artworkArtists);
-
-  // id 0 = static + styles + genres + museums (small)
-  // id 1..N = artist batches
-  // id N+1..M = artwork batches
-  const sitemaps = [{ id: 0 }];
-
-  const artistSitemaps = Math.ceil(artistCount.value / BATCH_SIZE);
-  for (let i = 0; i < artistSitemaps; i++) {
-    sitemaps.push({ id: i + 1 });
-  }
-
-  const artworkStart = artistSitemaps + 1;
-  const artworkSitemapCount = Math.ceil(artworkCount.value / BATCH_SIZE);
-  for (let i = 0; i < artworkSitemapCount; i++) {
-    sitemaps.push({ id: artworkStart + i });
-  }
-
-  return sitemaps;
+  // id 0 = static + styles + genres + museums
+  // id 1..ARTIST_SITEMAPS = artist batches
+  // id (ARTIST_SITEMAPS+1)..(ARTIST_SITEMAPS+ARTWORK_SITEMAPS) = artwork batches
+  const total = 1 + ARTIST_SITEMAPS + ARTWORK_SITEMAPS;
+  return Array.from({ length: total }, (_, i) => ({ id: i }));
 }
 
 export default async function sitemap(props: {
@@ -50,34 +26,34 @@ export default async function sitemap(props: {
 }): Promise<MetadataRoute.Sitemap> {
   const id = Number(await props.id);
 
-  // Compute boundaries
-  const [artistCount] = await db
-    .select({ value: countDistinct(artworkArtists.artistId) })
-    .from(artworkArtists);
-  const artistSitemaps = Math.ceil(artistCount.value / BATCH_SIZE);
-  const artworkStart = artistSitemaps + 1;
-
-  // Sitemap 0: static + styles + genres + museums
   if (id === 0) {
-    const [allStyles, allGenres, allMuseums] = await Promise.all([
-      db
-        .select({ slug: styles.slug })
-        .from(styles)
-        .innerJoin(artworkStyles, eq(styles.id, artworkStyles.styleId))
-        .groupBy(styles.id, styles.slug)
-        .having(sql`count(*) >= 5`),
-      db
-        .select({ slug: genres.slug })
-        .from(genres)
-        .innerJoin(artworks, eq(genres.id, artworks.genreId))
-        .groupBy(genres.id, genres.slug)
-        .having(sql`count(*) >= 5`),
-      db
-        .selectDistinctOn([museums.id], { slug: museums.slug })
-        .from(museums)
-        .innerJoin(artworks, eq(museums.id, artworks.museumId))
-        .orderBy(museums.id),
+    const [stylesResult, genresResult, museumsResult] = await Promise.all([
+      db.execute(sql`
+        WITH counts AS (
+          SELECT style_id, count(*) AS n
+          FROM artwork_styles GROUP BY style_id
+        )
+        SELECT s.slug FROM styles s
+        INNER JOIN counts c ON c.style_id = s.id
+        WHERE c.n >= 5
+      `),
+      db.execute(sql`
+        WITH counts AS (
+          SELECT genre_id, count(*) AS n
+          FROM artworks WHERE genre_id IS NOT NULL GROUP BY genre_id
+        )
+        SELECT g.slug FROM genres g
+        INNER JOIN counts c ON c.genre_id = g.id
+        WHERE c.n >= 5
+      `),
+      db.execute(sql`
+        SELECT DISTINCT m.slug FROM museums m
+        INNER JOIN artworks a ON a.museum_id = m.id
+      `),
     ]);
+    const allStyles = stylesResult.rows as unknown as Array<{ slug: string }>;
+    const allGenres = genresResult.rows as unknown as Array<{ slug: string }>;
+    const allMuseums = museumsResult.rows as unknown as Array<{ slug: string }>;
 
     return [
       { url: BASE_URL, changeFrequency: "daily", priority: 1 },
@@ -106,8 +82,7 @@ export default async function sitemap(props: {
     ];
   }
 
-  // Artist sitemaps (id 1..artistSitemaps)
-  if (id <= artistSitemaps) {
+  if (id <= ARTIST_SITEMAPS) {
     const offset = (id - 1) * BATCH_SIZE;
     const rows = await db
       .selectDistinctOn([artists.id], { slug: artists.slug })
@@ -124,13 +99,13 @@ export default async function sitemap(props: {
     }));
   }
 
-  // Artwork sitemaps (id artworkStart+)
+  const artworkStart = ARTIST_SITEMAPS + 1;
   const offset = (id - artworkStart) * BATCH_SIZE;
   const rows = await db
     .select({ slug: artworks.slug })
     .from(artworks)
     .where(isNotNull(artworks.imageUrl))
-    .orderBy(artworks.slug)
+    .orderBy(artworks.id)
     .limit(BATCH_SIZE)
     .offset(offset);
 
