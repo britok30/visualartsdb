@@ -4,6 +4,7 @@ import { getArtistBySlug } from "@/lib/db/queries";
 export const alt = "Artist on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const revalidate = 86400;
 
 const MAGIC = {
   png: [0x89, 0x50, 0x4e, 0x47],

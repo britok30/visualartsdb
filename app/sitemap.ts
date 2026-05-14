@@ -14,6 +14,8 @@ import { count, countDistinct, eq, sql, isNotNull } from "drizzle-orm";
 const BASE_URL = "https://www.visualartsdb.com";
 const BATCH_SIZE = 50000;
 
+export const revalidate = 86400;
+
 export async function generateSitemaps() {
   const [artworkCount] = await db
     .select({ value: count() })

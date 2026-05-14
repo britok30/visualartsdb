@@ -4,6 +4,7 @@ import { getArtworkBySlug } from "@/lib/db/queries";
 export const alt = "Artwork on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const revalidate = 86400;
 
 // Magic bytes for formats Satori actually supports
 const MAGIC = {

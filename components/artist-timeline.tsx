@@ -8,9 +8,11 @@ interface TimelineArtwork {
   id: string;
   slug: string;
   title: string;
-  year: number | null;
+  year: number;
   imageUrl: string | null;
   thumbnailUrl: string | null;
+  decade: number;
+  decadeCount: number;
 }
 
 interface ArtistTimelineProps {
@@ -24,18 +26,19 @@ export function ArtistTimeline({
   birthYear,
   deathYear,
 }: ArtistTimelineProps) {
-  const dated = artworks
-    .filter((a) => a.year !== null)
-    .sort((a, b) => a.year! - b.year!);
+  if (artworks.length < 3) return null;
 
-  if (dated.length < 3) return null;
-
-  // Group by decade
-  const decades = new Map<number, TimelineArtwork[]>();
-  for (const artwork of dated) {
-    const decade = Math.floor(artwork.year! / 10) * 10;
-    if (!decades.has(decade)) decades.set(decade, []);
-    decades.get(decade)!.push(artwork);
+  const decades = new Map<number, { works: TimelineArtwork[]; count: number }>();
+  for (const artwork of artworks) {
+    const entry = decades.get(artwork.decade);
+    if (entry) {
+      entry.works.push(artwork);
+    } else {
+      decades.set(artwork.decade, {
+        works: [artwork],
+        count: artwork.decadeCount,
+      });
+    }
   }
 
   const sortedDecades = [...decades.entries()].sort((a, b) => a[0] - b[0]);
@@ -52,7 +55,7 @@ export function ArtistTimeline({
       )}
 
       <div className="no-scrollbar mt-8 flex gap-12 overflow-x-auto px-6 pb-4">
-        {sortedDecades.map(([decade, works], di) => (
+        {sortedDecades.map(([decade, { works, count }], di) => (
           <motion.div
             key={decade}
             className="shrink-0"
@@ -91,9 +94,9 @@ export function ArtistTimeline({
                   </p>
                 </Link>
               ))}
-              {works.length > 4 && (
+              {count > 4 && (
                 <div className="flex h-32 w-16 shrink-0 items-center justify-center text-[10px] text-neutral-300">
-                  +{works.length - 4}
+                  +{count - 4}
                 </div>
               )}
             </div>

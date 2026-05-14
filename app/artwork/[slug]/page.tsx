@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/json-ld";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworkBySlug, getRelatedArtworks } from "@/lib/db/queries";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function generateMetadata({
   params,

@@ -264,20 +264,65 @@ export async function getArtistArtworks(
   return { rows, total: total.value };
 }
 
-export async function getArtistTimelineArtworks(artistId: string) {
-  return db
-    .select({
-      id: artworks.id,
-      slug: artworks.slug,
-      title: artworks.title,
-      year: artworks.year,
-      imageUrl: artworks.imageUrl,
-      thumbnailUrl: artworks.thumbnailUrl,
-    })
-    .from(artworks)
-    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-    .where(sql`${artworkArtists.artistId} = ${artistId} AND ${artworks.year} IS NOT NULL`)
-    .orderBy(asc(artworks.year));
+export interface TimelineArtwork {
+  id: string;
+  slug: string;
+  title: string;
+  year: number;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  decade: number;
+  decadeCount: number;
+}
+
+export async function getArtistTimelineArtworks(
+  artistId: string,
+): Promise<TimelineArtwork[]> {
+  const result = await db.execute(sql`
+    WITH ranked AS (
+      SELECT
+        a.id,
+        a.slug,
+        a.title,
+        a.year,
+        a.image_url,
+        a.thumbnail_url,
+        (a.year / 10) * 10 AS decade,
+        ROW_NUMBER() OVER (
+          PARTITION BY (a.year / 10) * 10
+          ORDER BY a.year, a.id
+        ) AS rn,
+        COUNT(*) OVER (PARTITION BY (a.year / 10) * 10) AS decade_count
+      FROM artworks a
+      INNER JOIN artwork_artists aa ON aa.artwork_id = a.id
+      WHERE aa.artist_id = ${artistId}
+        AND a.year IS NOT NULL
+    )
+    SELECT id, slug, title, year, image_url, thumbnail_url, decade, decade_count
+    FROM ranked
+    WHERE rn <= 4
+    ORDER BY year ASC
+  `);
+
+  return (result.rows as Array<{
+    id: string;
+    slug: string;
+    title: string;
+    year: number;
+    image_url: string | null;
+    thumbnail_url: string | null;
+    decade: number;
+    decade_count: number | string;
+  }>).map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    year: r.year,
+    imageUrl: r.image_url,
+    thumbnailUrl: r.thumbnail_url,
+    decade: Number(r.decade),
+    decadeCount: Number(r.decade_count),
+  }));
 }
 
 // ─── Browse ──────────────────────────────────────────────────────
