@@ -11,8 +11,8 @@ import {
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
-  title: `${SITE_NAME} — Explore the World's Art`,
-  description: `Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
+  title: `${SITE_NAME} — The World's Largest Visual Arts Encyclopedia`,
+  description: `The world's largest visual arts encyclopedia. Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
 export const revalidate = 3600;

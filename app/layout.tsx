@@ -11,15 +11,15 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.visualartsdb.com"),
   title: {
-    default: `${SITE_NAME} — Explore the World's Art`,
+    default: `${SITE_NAME} — The World's Largest Visual Arts Encyclopedia`,
     template: `%s — ${SITE_NAME}`,
   },
-  description: `Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums. Browse Impressionism, Surrealism, Baroque, and more.`,
+  description: `The world's largest visual arts encyclopedia. Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums — Impressionism, Surrealism, Baroque, and more.`,
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: SITE_NAME,
-    description: `Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums.`,
+    title: `${SITE_NAME} — The World's Largest Visual Arts Encyclopedia`,
+    description: `The world's largest visual arts encyclopedia — ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums.`,
     images: [
       {
         url: "/og.png",
@@ -49,7 +49,7 @@ export default function RootLayout({
             "@type": "WebSite",
             name: SITE_NAME,
             url: "https://www.visualartsdb.com",
-            description: `Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums.`,
+            description: `The world's largest visual arts encyclopedia — ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums.`,
             potentialAction: {
               "@type": "SearchAction",
               target: {
