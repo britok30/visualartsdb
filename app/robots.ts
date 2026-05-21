@@ -51,7 +51,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: ["/api/"] },
+      { userAgent: "*", allow: "/", disallow: ["/api/", "/search"] },
       ...blockedBots.map((userAgent) => ({ userAgent, disallow: "/" })),
     ],
     sitemap: sitemaps,

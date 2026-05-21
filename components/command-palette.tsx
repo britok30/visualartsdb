@@ -61,7 +61,7 @@ function DynamicSearchActions() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 2) {
+    if (!searchQuery || searchQuery.length < 3) {
       setActions([]);
       return;
     }

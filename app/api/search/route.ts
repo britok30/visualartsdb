@@ -9,15 +9,25 @@ import {
 } from "@/lib/db/schema";
 import { eq, ilike, sql } from "drizzle-orm";
 
+// CDN-cache repeat queries at the edge so they never wake Neon compute.
+// Browser revalidates fast to keep the UI feeling live; Vercel edge holds 1h fresh + 24h SWR.
+const CACHE_HEADERS = {
+  "Cache-Control": "public, max-age=0, must-revalidate",
+  "Vercel-CDN-Cache-Control":
+    "public, s-maxage=3600, stale-while-revalidate=86400",
+  "CDN-Cache-Control":
+    "public, s-maxage=3600, stale-while-revalidate=86400",
+};
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim();
-  if (!q || q.length < 2) {
-    return NextResponse.json({
-      artists: [],
-      artworks: [],
-      styles: [],
-      genres: [],
-    });
+  // Min 3 chars — pg_trgm cannot use the GIN index for shorter patterns,
+  // so anything below 3 would force a seq scan on every artwork.
+  if (!q || q.length < 3) {
+    return NextResponse.json(
+      { artists: [], artworks: [], styles: [], genres: [] },
+      { headers: CACHE_HEADERS },
+    );
   }
 
   const prefixPattern = `${q}%`;
@@ -91,10 +101,13 @@ export async function GET(request: NextRequest) {
       .limit(4),
   ]);
 
-  return NextResponse.json({
-    artists: artistRows,
-    artworks: artworkRows,
-    styles: styleRows,
-    genres: genreRows,
-  });
+  return NextResponse.json(
+    {
+      artists: artistRows,
+      artworks: artworkRows,
+      styles: styleRows,
+      genres: genreRows,
+    },
+    { headers: CACHE_HEADERS },
+  );
 }
