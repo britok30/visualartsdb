@@ -6,7 +6,7 @@ import {
   getArtistMetadata,
 } from "./artist-content";
 
-export const revalidate = 86400;
+export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
 
 export async function generateMetadata({
   params,

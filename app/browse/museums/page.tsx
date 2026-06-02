@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SITE_STATS } from "@/lib/constants";
 import { getMuseumsWithCounts } from "@/lib/db/queries";
 
-export const revalidate = 3600;
+export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
 
 export const metadata: Metadata = {
   alternates: { canonical: "/browse/museums" },

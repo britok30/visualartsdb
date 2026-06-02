@@ -5,7 +5,7 @@ import {
   getArtistMetadata,
 } from "../../artist-content";
 
-export const revalidate = 86400;
+export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
 
 function parsePage(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;

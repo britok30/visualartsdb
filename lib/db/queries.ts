@@ -203,7 +203,10 @@ export async function getRelatedArtworks(
     .where(
       sql`${artworkArtists.artistId} IN ${artistIds} AND ${artworks.id} != ${artworkId} AND ${artworks.imageUrl} IS NOT NULL`
     )
-    .orderBy(sql`RANDOM()`)
+    // Was ORDER BY RANDOM() — a full materialize+sort of the artist's entire
+    // body of work on every artwork render. Chronological order is cache-stable
+    // and lets the planner use the year index, at no compute cost per render.
+    .orderBy(asc(artworks.year))
     .limit(limit);
 }
 

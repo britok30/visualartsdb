@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { KBarTrigger } from "./kbar-trigger";
 
 interface HeroProps {
-  artworks: number;
-  artists: number;
-  styles: number;
+  artworks: string;
+  artists: string;
+  styles: string;
 }
 
 export function Hero({ artworks, artists, styles }: HeroProps) {
@@ -27,9 +27,7 @@ export function Hero({ artworks, artists, styles }: HeroProps) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          {artworks.toLocaleString()} artworks across{" "}
-          {artists.toLocaleString()} artists and{" "}
-          {styles.toLocaleString()} styles
+          {artworks} artworks across {artists} artists and {styles} styles
         </motion.p>
         <motion.div
           className="mt-12"

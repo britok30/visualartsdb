@@ -5,7 +5,7 @@ import { Pagination } from "@/components/pagination";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworksByStyle } from "@/lib/db/queries";
 
-export const revalidate = 3600;
+export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
 
 export async function generateMetadata({
   params,

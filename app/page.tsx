@@ -6,7 +6,6 @@ import {
   getFeaturedArtworks,
   getArtworksByStyleName,
   getArtworksByGenreName,
-  getStats,
 } from "@/lib/db/queries";
 
 export const metadata: Metadata = {
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
   description: `The world's largest visual arts encyclopedia. Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
-export const revalidate = 3600;
+export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
 
 type Section = { name: string; slug: string; title?: string };
 
@@ -83,9 +82,10 @@ const GENRE_SECTIONS: Section[] = [
 ];
 
 export default async function Home() {
-  const [featured, stats, ...rest] = await Promise.all([
+  // Stats come from the SITE_STATS constant (also used in metadata) instead of
+  // 5 live COUNT(*) full-table scans per homepage regeneration.
+  const [featured, ...rest] = await Promise.all([
     getFeaturedArtworks(20),
-    getStats(),
     ...STYLE_SECTIONS.map((s) => getArtworksByStyleName(s.name, 20)),
     ...GENRE_SECTIONS.map((g) => getArtworksByGenreName(g.name, 20)),
   ]);
@@ -96,9 +96,9 @@ export default async function Home() {
   return (
     <div>
       <Hero
-        artworks={stats.artworks}
-        artists={stats.artists}
-        styles={stats.styles}
+        artworks={SITE_STATS.artworks}
+        artists={SITE_STATS.artists}
+        styles={SITE_STATS.styles}
       />
 
       <div className="space-y-16">
