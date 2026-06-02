@@ -252,6 +252,36 @@ async function restoreForeignKeys(
   console.log(`🔒 Restored ${restored}/${fks.length} foreign key constraints`);
 }
 
+// After a successful sync, trigger a Vercel redeploy so the live site (whose
+// content routes are revalidate=false / fully static) picks up the new data.
+// Each Vercel deployment gets a fresh ISR cache, so pages re-render on-demand
+// with the latest DB rows on their next visit. Set VERCEL_DEPLOY_HOOK_URL to a
+// Deploy Hook from Vercel → Settings → Git → Deploy Hooks.
+async function triggerRedeploy() {
+  const hook = process.env.VERCEL_DEPLOY_HOOK_URL;
+  if (!hook) {
+    console.log(
+      "\n⚠ VERCEL_DEPLOY_HOOK_URL not set — skipping redeploy.\n" +
+        "   Content pages are revalidate=false, so the live site will NOT reflect\n" +
+        "   this sync until you redeploy. Create a Deploy Hook in Vercel and add it\n" +
+        "   to .env.local, or redeploy manually (git push / `vercel --prod`)."
+    );
+    return;
+  }
+  try {
+    const res = await fetch(hook, { method: "POST" });
+    console.log(
+      res.ok
+        ? "\n🚀 Triggered Vercel redeploy — live site refreshes once the build finishes."
+        : `\n⚠ Deploy hook returned ${res.status} — redeploy not triggered. Redeploy manually.`
+    );
+  } catch (err) {
+    console.log(
+      `\n⚠ Deploy hook request failed (${(err as Error).message}) — redeploy manually.`
+    );
+  }
+}
+
 async function main() {
   console.log("🔄 Starting data sync...\n");
   console.log(
@@ -320,6 +350,9 @@ async function main() {
   await target.end();
 
   console.log("\n✅ Sync complete!");
+
+  // Bust the static cache so the new data goes live.
+  await triggerRedeploy();
 }
 
 main().catch(async (err) => {
