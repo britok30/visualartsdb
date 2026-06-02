@@ -70,24 +70,30 @@ const STYLE_SECTIONS: Section[] = [
   { name: "African Art", slug: "african-art" },
 ];
 
+// NOTE: `name` must match genres.name EXACTLY (the section query and the
+// /browse/genres/[slug] link both look up by these). The DB stores capitalized,
+// pluralized names — the previous lowercase-singular values matched nothing, so
+// every genre row rendered blank. Values below verified against the DB.
 const GENRE_SECTIONS: Section[] = [
-  { name: "painting", slug: "painting" },
-  { name: "photograph", slug: "photograph" },
-  { name: "sculpture", slug: "sculpture" },
-  { name: "drawing", slug: "drawing" },
-  { name: "woodblock print", slug: "woodblock-print" },
-  { name: "ceramics", slug: "ceramics" },
-  { name: "portrait", slug: "portrait" },
-  { name: "landscape", slug: "landscape" },
+  { name: "Paintings", slug: "paintings" },
+  { name: "Photographs", slug: "photographs" },
+  { name: "Sculpture", slug: "sculpture" },
+  { name: "Drawings", slug: "drawings" },
+  { name: "Print", slug: "print", title: "Prints" },
+  { name: "Ceramics", slug: "ceramics" },
+  { name: "Textiles", slug: "textiles" },
+  { name: "Illustrated books", slug: "illustrated-books" },
 ];
 
 export default async function Home() {
   // Stats come from the SITE_STATS constant (also used in metadata) instead of
   // 5 live COUNT(*) full-table scans per homepage regeneration.
+  // Fetch a larger POOL per row (built once per deploy); ScrollRow shuffles each
+  // pool down to 20 per visit on the client for variety with no per-request DB.
   const [featured, ...rest] = await Promise.all([
-    getFeaturedArtworks(20),
-    ...STYLE_SECTIONS.map((s) => getArtworksByStyleName(s.name, 20)),
-    ...GENRE_SECTIONS.map((g) => getArtworksByGenreName(g.name, 20)),
+    getFeaturedArtworks(60),
+    ...STYLE_SECTIONS.map((s) => getArtworksByStyleName(s.name, 40)),
+    ...GENRE_SECTIONS.map((g) => getArtworksByGenreName(g.name, 40)),
   ]);
 
   const styleSections = rest.slice(0, STYLE_SECTIONS.length);
@@ -102,7 +108,7 @@ export default async function Home() {
       />
 
       <div className="space-y-16">
-        <ScrollRow title="Discover" artworks={featured} priority />
+        <ScrollRow title="Discover" artworks={featured} shuffleTo={20} priority />
 
         {STYLE_SECTIONS.map((section, i) => (
           <ScrollRow
@@ -110,6 +116,7 @@ export default async function Home() {
             title={section.title ?? section.name}
             href={`/browse/styles/${section.slug}`}
             artworks={styleSections[i]}
+            shuffleTo={20}
           />
         ))}
 
@@ -122,6 +129,7 @@ export default async function Home() {
             }
             href={`/browse/genres/${section.slug}`}
             artworks={genreSections[i]}
+            shuffleTo={20}
           />
         ))}
       </div>

@@ -27,15 +27,12 @@ export interface HomeArtwork {
   artistSlug: string;
 }
 
-// Hour-based offset for cheap variety on cached homepage queries.
-// Returns a stable value within each hour, rotating across `range` windows.
-function hourlyOffset(range: number): number {
-  const hour = Math.floor(Date.now() / 3_600_000);
-  return ((hour * 7919) % range + range) % range;
-}
-
-export async function getFeaturedArtworks(limit = 12): Promise<HomeArtwork[]> {
-  const offset = hourlyOffset(500);
+// Returns a POOL of artworks (default 60). The homepage is revalidate=false, so
+// this runs once per deploy — a random sample is cheap here. TABLESAMPLE reads a
+// small random slice of pages instead of sorting the whole 1M-row table. The
+// client (ScrollRow) shuffles this pool to a display subset on each visit, which
+// is what gives per-user variety without any per-request DB work.
+export async function getFeaturedArtworks(limit = 60): Promise<HomeArtwork[]> {
   const result = await db.execute(sql`
     SELECT
       a.id, a.title, a.slug, a.year,
@@ -47,10 +44,9 @@ export async function getFeaturedArtworks(limit = 12): Promise<HomeArtwork[]> {
       (SELECT ar.slug FROM artists ar
         INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
         WHERE aa.artwork_id = a.id LIMIT 1) AS "artistSlug"
-    FROM artworks a
+    FROM artworks a TABLESAMPLE SYSTEM (2)
     WHERE a.image_url IS NOT NULL
-    ORDER BY a.id
-    LIMIT ${limit} OFFSET ${offset}
+    LIMIT ${limit}
   `);
   return result.rows as unknown as HomeArtwork[];
 }
@@ -83,9 +79,9 @@ export async function getStats() {
 
 export async function getArtworksByStyleName(
   styleName: string,
-  limit = 20,
+  limit = 40,
 ): Promise<HomeArtwork[]> {
-  const offset = hourlyOffset(100);
+  // Pool of `limit`; ScrollRow shuffles to a display subset client-side per visit.
   const result = await db.execute(sql`
     SELECT
       a.id, a.title, a.slug, a.year,
@@ -102,16 +98,16 @@ export async function getArtworksByStyleName(
     INNER JOIN styles s ON s.id = ast.style_id
     WHERE s.name = ${styleName} AND a.image_url IS NOT NULL
     ORDER BY a.id
-    LIMIT ${limit} OFFSET ${offset}
+    LIMIT ${limit}
   `);
   return result.rows as unknown as HomeArtwork[];
 }
 
 export async function getArtworksByGenreName(
   genreName: string,
-  limit = 20,
+  limit = 40,
 ): Promise<HomeArtwork[]> {
-  const offset = hourlyOffset(100);
+  // Pool of `limit`; ScrollRow shuffles to a display subset client-side per visit.
   const result = await db.execute(sql`
     SELECT
       a.id, a.title, a.slug, a.year,
@@ -127,7 +123,7 @@ export async function getArtworksByGenreName(
     INNER JOIN genres g ON g.id = a.genre_id
     WHERE g.name = ${genreName} AND a.image_url IS NOT NULL
     ORDER BY a.id
-    LIMIT ${limit} OFFSET ${offset}
+    LIMIT ${limit}
   `);
   return result.rows as unknown as HomeArtwork[];
 }
