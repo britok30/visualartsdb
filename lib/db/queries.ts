@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from ".";
 import { eq, sql, desc, asc, ilike, or, count } from "drizzle-orm";
 import {
@@ -133,74 +134,50 @@ export async function getArtworksByGenreName(
 
 // ─── Artwork ─────────────────────────────────────────────────────
 
-export async function getArtworkBySlug(slug: string) {
-  const [artwork] = await db
-    .select()
-    .from(artworks)
-    .where(eq(artworks.slug, slug))
-    .limit(1);
+// Wrapped in React cache(): generateMetadata + the page body both call this
+// per request, and raw Drizzle calls are not auto-memoized like fetch(). cache()
+// dedupes them to a single execution within one request (request-scoped, no
+// cross-request leakage). See node_modules/next/dist/docs/.../14-metadata-and-og-images.md
+export const getArtworkBySlug = cache(async (slug: string) => {
+  // Single relational query (one DB round-trip) replacing the prior 6 sequential
+  // queries. Drizzle's relational query builder emits one SQL statement with the
+  // related rows json-aggregated. `columns: {}` on the join tables drops their
+  // own columns so only the nested entity is fetched. Public return shape is
+  // identical to the old version, so callers (page + OG image) are unchanged.
+  const row = await db.query.artworks.findFirst({
+    where: eq(artworks.slug, slug),
+    with: {
+      artworkArtists: {
+        columns: {},
+        with: { artist: { columns: { id: true, name: true, slug: true } } },
+      },
+      artworkStyles: {
+        columns: {},
+        with: { style: { columns: { id: true, name: true, slug: true } } },
+      },
+      artworkTags: {
+        columns: {},
+        with: { tag: { columns: { id: true, name: true, slug: true } } },
+      },
+      genre: true,
+      museum: true,
+    },
+  });
 
-  if (!artwork) return null;
+  if (!row) return null;
 
-  const artworkArtistRows = await db
-    .select({
-      id: artists.id,
-      name: artists.name,
-      slug: artists.slug,
-    })
-    .from(artworkArtists)
-    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-    .where(eq(artworkArtists.artworkId, artwork.id));
-
-  const artworkStyleRows = await db
-    .select({
-      id: styles.id,
-      name: styles.name,
-      slug: styles.slug,
-    })
-    .from(artworkStyles)
-    .innerJoin(styles, eq(artworkStyles.styleId, styles.id))
-    .where(eq(artworkStyles.artworkId, artwork.id));
-
-  const artworkTagRows = await db
-    .select({
-      id: tags.id,
-      name: tags.name,
-      slug: tags.slug,
-    })
-    .from(artworkTags)
-    .innerJoin(tags, eq(artworkTags.tagId, tags.id))
-    .where(eq(artworkTags.artworkId, artwork.id));
-
-  let genre = null;
-  if (artwork.genreId) {
-    const [g] = await db
-      .select()
-      .from(genres)
-      .where(eq(genres.id, artwork.genreId))
-      .limit(1);
-    genre = g ?? null;
-  }
-
-  let museum = null;
-  if (artwork.museumId) {
-    const [m] = await db
-      .select()
-      .from(museums)
-      .where(eq(museums.id, artwork.museumId))
-      .limit(1);
-    museum = m ?? null;
-  }
+  const { artworkArtists: aa, artworkStyles: ast, artworkTags: atg, genre, museum, ...artwork } =
+    row;
 
   return {
     ...artwork,
-    artists: artworkArtistRows,
-    styles: artworkStyleRows,
-    tags: artworkTagRows,
-    genre,
-    museum,
+    artists: aa.map((r) => r.artist),
+    styles: ast.map((r) => r.style),
+    tags: atg.map((r) => r.tag),
+    genre: genre ?? null,
+    museum: museum ?? null,
   };
-}
+});
 
 export async function getRelatedArtworks(
   artworkId: string,
@@ -232,7 +209,10 @@ export async function getRelatedArtworks(
 
 // ─── Artist ──────────────────────────────────────────────────────
 
-export async function getArtistBySlug(slug: string) {
+// Wrapped in React cache() for the same reason as getArtworkBySlug: the artist
+// route calls this in both generateMetadata (via getArtistMetadata) and the page
+// body (via ArtistContent). cache() collapses those to one query per request.
+export const getArtistBySlug = cache(async (slug: string) => {
   const [artist] = await db
     .select()
     .from(artists)
@@ -252,7 +232,7 @@ export async function getArtistBySlug(slug: string) {
     .where(eq(artistStyles.artistId, artist.id));
 
   return { ...artist, styles: artistStyleRows };
-}
+});
 
 export async function getArtistArtworks(
   artistId: string,
