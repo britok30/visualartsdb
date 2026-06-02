@@ -1,4 +1,5 @@
 import { Pool } from "@neondatabase/serverless";
+import { triggerRedeploy } from "./trigger-redeploy";
 
 const source = new Pool({
   connectionString: process.env.SCRAPE_DATABASE_URL,
@@ -226,6 +227,13 @@ async function main() {
   await target.end();
 
   console.log("\n✅ Incremental sync complete!");
+
+  // Only bust the static cache if something actually changed.
+  if (totalNew > 0) {
+    await triggerRedeploy();
+  } else {
+    console.log("   (no new rows — skipping redeploy)");
+  }
 }
 
 main().catch(async (err) => {

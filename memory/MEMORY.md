@@ -1,2 +1,5 @@
 - [Data pipeline and sync strategy](project_data_pipeline.md) — incremental sync only, production is superset of scrape DB
 - [Database setup](project_db_setup.md) — two Neon PG databases (production + scrape), env vars need single-quoting in shell
+- [Static rendering and cache invalidation](project_static_rendering.md) — content routes are revalidate=false; sync scripts trigger a Vercel redeploy to go live
+- [Compute optimizations and query patterns](project_compute_optimizations.md) — cache() dedup, single relational fetch, no per-request RANDOM/COUNT(*); keep Neon compute low
+- [Homepage variety and section naming](project_homepage.md) — client-side shuffle of static pools; STYLE/GENRE_SECTIONS names must match the DB exactly
