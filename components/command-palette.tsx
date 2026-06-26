@@ -13,7 +13,7 @@ import {
   type Action,
 } from "kbar";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 function SearchResults() {
   const { results } = useMatches();
@@ -57,12 +57,17 @@ function DynamicSearchActions() {
     searchQuery: state.searchQuery,
   }));
   const router = useRouter();
+  const normalizedQuery = searchQuery.trim();
   const [actions, setActions] = useState<Action[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const registeredActions = useMemo(
+    () => (normalizedQuery.length >= 3 ? actions : []),
+    [actions, normalizedQuery],
+  );
 
   useEffect(() => {
-    if (!searchQuery || searchQuery.length < 3) {
-      setActions([]);
+    if (normalizedQuery.length < 3) {
+      abortRef.current?.abort();
       return;
     }
 
@@ -74,7 +79,7 @@ function DynamicSearchActions() {
 
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(searchQuery)}`,
+          `/api/search?q=${encodeURIComponent(normalizedQuery)}`,
           { signal: controller.signal }
         );
         const data = await res.json();
@@ -125,10 +130,10 @@ function DynamicSearchActions() {
         if (dynamicActions.length > 0) {
           dynamicActions.push({
             id: "view-all-results",
-            name: `View all results for "${searchQuery}"`,
+            name: `View all results for "${normalizedQuery}"`,
             section: "Search",
             perform: () =>
-              router.push(`/search?q=${encodeURIComponent(searchQuery)}`),
+              router.push(`/search?q=${encodeURIComponent(normalizedQuery)}`),
           });
         }
 
@@ -137,12 +142,12 @@ function DynamicSearchActions() {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setActions([]);
       }
-    }, 150);
+    }, 400);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, router]);
+  }, [normalizedQuery, router]);
 
-  useRegisterActions(actions, [actions]);
+  useRegisterActions(registeredActions, [registeredActions]);
 
   return null;
 }

@@ -55,7 +55,11 @@ export function ScrollRow({
   );
 
   useEffect(() => {
-    if (shuffleTo) setItems(sample(artworks, shuffleTo));
+    if (!shuffleTo) return;
+    const id = window.setTimeout(() => {
+      setItems(sample(artworks, shuffleTo));
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [artworks, shuffleTo]);
 
   if (items.length === 0) return null;
@@ -97,4 +101,3 @@ export function ScrollRow({
     </motion.section>
   );
 }
-

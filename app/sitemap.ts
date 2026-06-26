@@ -5,6 +5,7 @@ import { eq, sql, isNotNull } from "drizzle-orm";
 
 const BASE_URL = "https://www.visualartsdb.com";
 const BATCH_SIZE = 50000;
+const INCLUDE_FULL_SITEMAP = process.env.INCLUDE_FULL_SITEMAP === "1";
 
 // Hardcoded shard counts (avoid expensive count queries during build).
 // Bump these if data grows past the implied caps.
@@ -14,6 +15,8 @@ const ARTWORK_SITEMAPS = 30; // up to 1.5M artworks with images
 export const revalidate = 86400;
 
 export async function generateSitemaps() {
+  if (!INCLUDE_FULL_SITEMAP) return [{ id: 0 }];
+
   // id 0 = static + styles + genres + museums
   // id 1..ARTIST_SITEMAPS = artist batches
   // id (ARTIST_SITEMAPS+1)..(ARTIST_SITEMAPS+ARTWORK_SITEMAPS) = artwork batches

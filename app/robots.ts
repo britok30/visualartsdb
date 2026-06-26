@@ -5,9 +5,12 @@ export const revalidate = 86400;
 // Must match sitemap.ts constants
 const ARTIST_SITEMAPS = 3;
 const ARTWORK_SITEMAPS = 30;
+const INCLUDE_FULL_SITEMAP = process.env.INCLUDE_FULL_SITEMAP === "1";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const totalSitemaps = 1 + ARTIST_SITEMAPS + ARTWORK_SITEMAPS;
+  const totalSitemaps = INCLUDE_FULL_SITEMAP
+    ? 1 + ARTIST_SITEMAPS + ARTWORK_SITEMAPS
+    : 1;
   const sitemaps = Array.from({ length: totalSitemaps }, (_, i) =>
     `https://www.visualartsdb.com/sitemap/${i}.xml`
   );

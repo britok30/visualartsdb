@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { ArtworkImage } from "@/components/artwork-image";
 import {
   getFavorites,
@@ -11,18 +11,21 @@ import {
   type FavoriteItem,
 } from "@/lib/favorites";
 
+function subscribeFavorites(onStoreChange: () => void) {
+  window.addEventListener("favorites-changed", onStoreChange);
+  return () => window.removeEventListener("favorites-changed", onStoreChange);
+}
+
+function getServerFavoritesSnapshot(): FavoriteItem[] {
+  return [];
+}
+
 export default function FavoritesPage() {
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-
-  useEffect(() => {
-    setFavorites(getFavorites());
-
-    function sync() {
-      setFavorites(getFavorites());
-    }
-    window.addEventListener("favorites-changed", sync);
-    return () => window.removeEventListener("favorites-changed", sync);
-  }, []);
+  const favorites = useSyncExternalStore(
+    subscribeFavorites,
+    getFavorites,
+    getServerFavoritesSnapshot,
+  );
 
   const artworks = favorites.filter((f) => f.type === "artwork");
   const artists = favorites.filter((f) => f.type === "artist");

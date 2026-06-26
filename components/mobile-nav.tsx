@@ -4,8 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKBar } from "kbar";
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const links = [
   { label: "Search", href: null },
@@ -20,11 +19,6 @@ const links = [
 export function MobileNav() {
   const { query } = useKBar();
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   return (
     <div className="md:hidden">
@@ -71,6 +65,7 @@ export function MobileNav() {
                   >
                     <Link
                       href={item.href}
+                      onClick={() => setOpen(false)}
                       className="block py-2 text-sm text-neutral-400 transition-colors hover:text-neutral-900"
                     >
                       {item.label}

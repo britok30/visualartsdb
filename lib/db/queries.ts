@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { db } from ".";
 import { eq, sql, desc, asc, ilike, or, count } from "drizzle-orm";
 import {
@@ -6,11 +7,9 @@ import {
   artists,
   styles,
   genres,
-  tags,
   museums,
   artworkArtists,
   artworkStyles,
-  artworkTags,
   artistStyles,
 } from "./schema";
 
@@ -514,7 +513,11 @@ export async function getArtworksByMuseum(
 
 // ─── Search ──────────────────────────────────────────────────────
 
-export async function searchArtworks(query: string, page = 1, limit = 24) {
+export const searchArtworks = unstable_cache(async function searchArtworks(
+  query: string,
+  page = 1,
+  limit = 24,
+) {
   const offset = (page - 1) * limit;
   const pattern = `%${query}%`;
 
@@ -555,9 +558,13 @@ export async function searchArtworks(query: string, page = 1, limit = 24) {
     );
 
   return { rows, total: total.value };
-}
+}, ["search-artworks"], { revalidate: 86400 });
 
-export async function searchArtists(query: string, page = 1, limit = 24) {
+export const searchArtists = unstable_cache(async function searchArtists(
+  query: string,
+  page = 1,
+  limit = 24,
+) {
   const offset = (page - 1) * limit;
   const pattern = `%${query}%`;
 
@@ -593,4 +600,4 @@ export async function searchArtists(query: string, page = 1, limit = 24) {
     );
 
   return { rows, total: total.value };
-}
+}, ["search-artists"], { revalidate: 86400 });
