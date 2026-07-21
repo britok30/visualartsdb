@@ -5,18 +5,34 @@ import * as schema from "./schema";
 const raw = neon(process.env.DATABASE_URL!);
 
 // With scale-to-zero + a fixed-size compute, Neon can restart or suspend the
-// endpoint while a query is in flight (57P01 "terminating connection due to
-// administrator command", 57P02, 08006). The compute wakes in a few hundred
-// ms, so a short retry absorbs the race. All runtime queries here are reads,
-// so retrying is safe.
-const RETRYABLE_CODES = new Set(["57P01", "57P02", "08006"]);
-const MAX_ATTEMPTS = 3;
+// endpoint while a query is in flight — surfacing as 57P01 ("terminating
+// connection due to administrator command"), connection codes, proxy HTTP 5xx
+// ("the database system is shutting down", server_login_retry), or plain
+// fetch failures. A restart takes a few seconds, so back off exponentially
+// (~15s total). Every query this client runs is a read-only SELECT, so
+// retrying liberally is safe. Real query errors (bad SQL, constraint issues)
+// are never FATAL/5xx and still throw immediately.
+const RETRYABLE_CODES = new Set(["57P01", "57P02", "08006", "08P01", "08001"]);
+const MAX_ATTEMPTS = 5;
 
 function isRetryable(err: unknown): boolean {
-  const code = (err as { code?: string })?.code;
-  if (code && RETRYABLE_CODES.has(code)) return true;
-  const message = (err as Error)?.message ?? "";
-  return message.includes("terminating connection");
+  const e = err as {
+    code?: string;
+    severity?: string;
+    message?: string;
+    "neon:retryable"?: boolean;
+  };
+  if (e?.["neon:retryable"] === true) return true;
+  if (e?.code && RETRYABLE_CODES.has(e.code)) return true;
+  if (e?.severity === "FATAL") return true;
+  const message = e?.message ?? "";
+  return (
+    message.includes("terminating connection") ||
+    message.includes("shutting down") ||
+    message.includes("server_login_retry") ||
+    message.includes("Server error (HTTP status 5") ||
+    message.includes("fetch failed")
+  );
 }
 
 async function withRetry<T>(run: () => Promise<T>): Promise<T> {
@@ -25,7 +41,7 @@ async function withRetry<T>(run: () => Promise<T>): Promise<T> {
       return await run();
     } catch (err) {
       if (attempt >= MAX_ATTEMPTS || !isRetryable(err)) throw err;
-      await new Promise((r) => setTimeout(r, 500 * attempt));
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
     }
   }
 }
