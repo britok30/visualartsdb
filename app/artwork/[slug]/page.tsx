@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { convert } from "html-to-text";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArtworkImage } from "@/components/artwork-image";
@@ -10,6 +9,7 @@ import { ScrollRow } from "@/components/scroll-row";
 import { JsonLd } from "@/components/json-ld";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworkBySlug, getRelatedArtworks } from "@/lib/db/queries";
+import { htmlToPlain, truncateAtWord } from "@/lib/text";
 
 export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
 
@@ -29,12 +29,21 @@ export async function generateMetadata({
   const displayTitle = artistNames
     ? `${artwork.title} by ${artistNames}`
     : artwork.title;
+  // Fallback description enriched with year/medium/museum so it doesn't just
+  // duplicate the title tag across a million pages.
+  const facts = [
+    artwork.year ? String(artwork.year) : null,
+    artwork.medium,
+    artwork.museum?.name,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return {
     alternates: { canonical: `/artwork/${slug}` },
     title: displayTitle,
     description: artwork.description
-      ? convert(artwork.description, { wordwrap: false }).slice(0, 160)
-      : displayTitle,
+      ? truncateAtWord(htmlToPlain(artwork.description))
+      : `${displayTitle}${facts ? ` — ${facts}` : ""} on VisualArtsDB.`,
   };
 }
 
@@ -66,16 +75,26 @@ export default async function ArtworkPage({
           "@context": "https://schema.org",
           "@type": "VisualArtwork",
           name: artwork.title,
+          url: `https://www.visualartsdb.com/artwork/${artwork.slug}`,
+          mainEntityOfPage: `https://www.visualartsdb.com/artwork/${artwork.slug}`,
           image: artwork.imageUrl || undefined,
-          dateCreated: yearDisplay || undefined,
+          // ISO 8601: single year, or "1888/1890" interval — an en-dash range
+          // is not a valid dateCreated.
+          dateCreated: artwork.year
+            ? artwork.yearTo
+              ? `${artwork.year}/${artwork.yearTo}`
+              : String(artwork.year)
+            : undefined,
           creator: artwork.artists.map((a) => ({
             "@type": "Person",
             name: a.name,
             url: `https://www.visualartsdb.com/artist/${a.slug}`,
           })),
           artMedium: artwork.medium || undefined,
-          artform: artwork.genre?.name || undefined,
-          width: artwork.dimensions || undefined,
+          genre: artwork.genre?.name || undefined,
+          // Free-text like "65.5 × 81 cm" belongs in `size`, not `width`
+          // (which expects a structured Distance/QuantitativeValue).
+          size: artwork.dimensions || undefined,
           ...(artwork.museum && {
             isPartOf: {
               "@type": "Collection",
@@ -89,14 +108,23 @@ export default async function ArtworkPage({
         <Breadcrumbs
           items={[
             { name: "Home", href: "/" },
-            ...(artwork.genre
+            // The artist is the strongest entity in the hierarchy — better
+            // BreadcrumbList rich result + one more internal link per page.
+            ...(artwork.artists[0]
               ? [
                   {
-                    name: artwork.genre.name,
-                    href: `/browse/genres/${artwork.genre.slug}`,
+                    name: artwork.artists[0].name,
+                    href: `/artist/${artwork.artists[0].slug}`,
                   },
                 ]
-              : []),
+              : artwork.genre
+                ? [
+                    {
+                      name: artwork.genre.name,
+                      href: `/browse/genres/${artwork.genre.slug}`,
+                    },
+                  ]
+                : []),
             { name: artwork.title },
           ]}
         />
@@ -113,7 +141,7 @@ export default async function ArtworkPage({
                 priority
               />
             ) : (
-              <div className="flex h-96 w-full items-center justify-center bg-neutral-50 text-neutral-300">
+              <div className="flex h-96 w-full items-center justify-center bg-neutral-50 text-neutral-500">
                 No image available
               </div>
             )}
@@ -171,7 +199,7 @@ export default async function ArtworkPage({
             <dl className="space-y-4 text-sm">
               {artwork.medium && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wider text-neutral-300">
+                  <dt className="text-xs uppercase tracking-wider text-neutral-500">
                     Medium
                   </dt>
                   <dd className="mt-1 text-neutral-600">{artwork.medium}</dd>
@@ -179,7 +207,7 @@ export default async function ArtworkPage({
               )}
               {artwork.dimensions && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wider text-neutral-300">
+                  <dt className="text-xs uppercase tracking-wider text-neutral-500">
                     Dimensions
                   </dt>
                   <dd className="mt-1 text-neutral-600">
@@ -189,7 +217,7 @@ export default async function ArtworkPage({
               )}
               {artwork.genre && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wider text-neutral-300">
+                  <dt className="text-xs uppercase tracking-wider text-neutral-500">
                     Genre
                   </dt>
                   <dd className="mt-1">
@@ -204,7 +232,7 @@ export default async function ArtworkPage({
               )}
               {artwork.museum && (
                 <div>
-                  <dt className="text-xs uppercase tracking-wider text-neutral-300">
+                  <dt className="text-xs uppercase tracking-wider text-neutral-500">
                     Museum
                   </dt>
                   <dd className="mt-1">
@@ -221,7 +249,7 @@ export default async function ArtworkPage({
 
             {artwork.styles.length > 0 && (
               <div>
-                <span className="text-xs uppercase tracking-wider text-neutral-300">
+                <span className="text-xs uppercase tracking-wider text-neutral-500">
                   Styles
                 </span>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -240,7 +268,7 @@ export default async function ArtworkPage({
 
             {artwork.tags.length > 0 && (
               <div>
-                <span className="text-xs uppercase tracking-wider text-neutral-300">
+                <span className="text-xs uppercase tracking-wider text-neutral-500">
                   Tags
                 </span>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -255,11 +283,11 @@ export default async function ArtworkPage({
 
             {artwork.description && (
               <div>
-                <span className="text-xs uppercase tracking-wider text-neutral-300">
+                <span className="text-xs uppercase tracking-wider text-neutral-500">
                   About
                 </span>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-500">
-                  {convert(artwork.description, { wordwrap: false })}
+                  {htmlToPlain(artwork.description)}
                 </p>
               </div>
             )}

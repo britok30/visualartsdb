@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Quote, Check, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,16 @@ export function CiteButton(props: CiteButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<Format | null>(null);
 
+  // Close on Escape while the popover is open.
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
   async function copy(format: Format) {
     const text = generateCitation(format, props);
     await navigator.clipboard.writeText(text);
@@ -82,6 +92,8 @@ export function CiteButton(props: CiteButtonProps) {
         size="icon-sm"
         onClick={() => setOpen(!open)}
         aria-label="Cite this artwork"
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className="text-neutral-300 hover:text-neutral-900"
       >
         <Quote size={18} strokeWidth={1.5} />
@@ -96,7 +108,7 @@ export function CiteButton(props: CiteButtonProps) {
             transition={{ duration: 0.15 }}
             className="absolute right-0 top-10 z-10 w-[calc(100vw-3rem)] sm:w-80 border border-neutral-100 bg-white p-4 shadow-lg"
           >
-            <h4 className="text-xs uppercase tracking-widest text-neutral-300">
+            <h4 className="text-xs uppercase tracking-widest text-neutral-500">
               Cite this artwork
             </h4>
 
@@ -110,6 +122,7 @@ export function CiteButton(props: CiteButtonProps) {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => copy(format)}
+                    aria-label={`Copy ${format === "chicago" ? "Chicago" : format.toUpperCase()} citation`}
                     className="text-neutral-300 hover:text-neutral-900"
                   >
                     {copied === format ? (

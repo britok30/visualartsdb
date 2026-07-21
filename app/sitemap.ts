@@ -94,17 +94,23 @@ export default async function sitemap(props: {
     // over 1.2M artwork_artists rows OOM-crashed the 0.25 CU compute during
     // builds; the semi-join streams off the artist_id index.
     const result = await db.execute(sql`
-      SELECT ar.slug FROM artists ar
+      SELECT ar.slug, ar.updated_at FROM artists ar
       WHERE EXISTS (
         SELECT 1 FROM artwork_artists aa WHERE aa.artist_id = ar.id
       )
       ORDER BY ar.id
       LIMIT ${BATCH_SIZE} OFFSET ${offset}
     `);
-    const rows = result.rows as unknown as Array<{ slug: string }>;
+    const rows = result.rows as unknown as Array<{
+      slug: string;
+      updated_at: string | Date;
+    }>;
 
+    // lastModified is the one sitemap field Google actually uses (it ignores
+    // changefreq/priority) — it schedules recrawls off it when accurate.
     return rows.map((a) => ({
       url: `${BASE_URL}/artist/${a.slug}`,
+      lastModified: new Date(a.updated_at),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     }));
@@ -113,7 +119,7 @@ export default async function sitemap(props: {
   const artworkStart = ARTIST_SITEMAPS + 1;
   const offset = (id - artworkStart) * BATCH_SIZE;
   const rows = await db
-    .select({ slug: artworks.slug })
+    .select({ slug: artworks.slug, updatedAt: artworks.updatedAt })
     .from(artworks)
     .where(isNotNull(artworks.imageUrl))
     .orderBy(artworks.id)
@@ -122,6 +128,7 @@ export default async function sitemap(props: {
 
   return rows.map((a) => ({
     url: `${BASE_URL}/artwork/${a.slug}`,
+    lastModified: a.updatedAt,
     changeFrequency: "monthly" as const,
     priority: 0.5,
   }));

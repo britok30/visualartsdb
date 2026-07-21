@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of Use",
   description:
     "Terms of use for VisualArtsDB — permitted use, intellectual property, takedown requests, and disclaimers.",

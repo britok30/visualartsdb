@@ -46,6 +46,7 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
+      <h1 className="sr-only">Search</h1>
       <div className="mx-auto max-w-lg">
         <SearchBar defaultValue={raw} large />
       </div>
@@ -91,7 +92,7 @@ export default async function SearchPage({
           <section>
             <div className="flex items-baseline justify-between">
               <h2 className="text-xl italic tracking-tight">Artworks</h2>
-              <span className="text-xs text-neutral-300">
+              <span className="text-xs text-neutral-500">
                 {artworksResult.total.toLocaleString()} result
                 {artworksResult.total !== 1 && "s"}
               </span>
@@ -129,7 +130,7 @@ export default async function SearchPage({
       )}
 
       {!query && (
-        <p className="mt-16 text-center text-sm text-neutral-300">
+        <p className="mt-16 text-center text-sm text-neutral-500">
           Search for artists, artworks, or styles
         </p>
       )}

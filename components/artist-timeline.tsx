@@ -47,7 +47,7 @@ export function ArtistTimeline({
     <section className="mt-20">
       <h2 className="text-xl italic tracking-tight px-6">Timeline</h2>
       {(birthYear || deathYear) && (
-        <p className="mt-1 px-6 text-xs text-neutral-300">
+        <p className="mt-1 px-6 text-xs text-neutral-500">
           {birthYear && `Born ${birthYear}`}
           {birthYear && deathYear && " — "}
           {deathYear && `Died ${deathYear}`}
@@ -95,7 +95,7 @@ export function ArtistTimeline({
                 </Link>
               ))}
               {count > 4 && (
-                <div className="flex h-32 w-16 shrink-0 items-center justify-center text-[10px] text-neutral-300">
+                <div className="flex h-32 w-16 shrink-0 items-center justify-center text-[10px] text-neutral-500">
                   +{count - 4}
                 </div>
               )}

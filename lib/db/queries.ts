@@ -50,32 +50,6 @@ export async function getFeaturedArtworks(limit = 60): Promise<HomeArtwork[]> {
   return result.rows as unknown as HomeArtwork[];
 }
 
-export async function getStats() {
-  const [artworkCount] = await db
-    .select({ value: count() })
-    .from(artworks);
-  const [artistCount] = await db
-    .select({ value: count() })
-    .from(artists);
-  const [styleCount] = await db
-    .select({ value: count() })
-    .from(styles);
-  const [genreCount] = await db
-    .select({ value: count() })
-    .from(genres);
-  const [museumCount] = await db
-    .select({ value: count() })
-    .from(museums);
-
-  return {
-    artworks: artworkCount.value,
-    artists: artistCount.value,
-    styles: styleCount.value,
-    genres: genreCount.value,
-    museums: museumCount.value,
-  };
-}
-
 export async function getArtworksByStyleName(
   styleName: string,
   limit = 40,

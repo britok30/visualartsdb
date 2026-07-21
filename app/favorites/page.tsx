@@ -39,7 +39,7 @@ export default function FavoritesPage() {
         <div className="mt-20 flex flex-col items-center text-center">
           <Heart size={48} strokeWidth={1} className="text-neutral-200" />
           <p className="mt-6 text-neutral-400">No favorites yet.</p>
-          <p className="mt-1 text-sm text-neutral-300">
+          <p className="mt-1 text-sm text-neutral-500">
             Hover over any artwork and click the heart to save it here.
           </p>
           <Link

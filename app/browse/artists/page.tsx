@@ -68,7 +68,7 @@ export default async function ArtistsPage({
         <Link
           href="/browse/artists"
           className={`px-2 py-1 text-xs transition-colors ${
-            !letter ? "text-neutral-900" : "text-neutral-300 hover:text-neutral-600"
+            !letter ? "text-neutral-900" : "text-neutral-500 hover:text-neutral-900"
           }`}
         >
           All
@@ -80,7 +80,7 @@ export default async function ArtistsPage({
             className={`px-2 py-1 text-xs transition-colors ${
               letter === l
                 ? "text-neutral-900"
-                : "text-neutral-300 hover:text-neutral-600"
+                : "text-neutral-500 hover:text-neutral-900"
             }`}
           >
             {l}
@@ -114,7 +114,7 @@ export default async function ArtistsPage({
               <span className="text-sm text-neutral-600 transition-colors group-hover:text-neutral-900">
                 {artist.name}
               </span>
-              <span className="ml-2 text-xs text-neutral-300">
+              <span className="ml-2 text-xs text-neutral-500">
                 {[
                   artist.nationality,
                   artist.birthYear &&

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy Policy",
   description:
     "Privacy policy for VisualArtsDB — what we collect, what we don't, and the third-party services (including Google Analytics) that operate on the site.",

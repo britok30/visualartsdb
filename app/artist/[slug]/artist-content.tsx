@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { convert } from "html-to-text";
+import { htmlToPlain, truncateAtWord } from "@/lib/text";
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
 import { ArtworkCard } from "@/components/artwork-card";
@@ -56,7 +56,11 @@ export async function ArtistContent({
           nationality: artist.nationality || undefined,
           birthDate: artist.birthYear ? String(artist.birthYear) : undefined,
           deathDate: artist.deathYear ? String(artist.deathYear) : undefined,
+          description: artist.bio
+            ? truncateAtWord(htmlToPlain(artist.bio), 300)
+            : undefined,
           url: `https://www.visualartsdb.com/artist/${slug}`,
+          mainEntityOfPage: `https://www.visualartsdb.com/artist/${slug}`,
         }}
       />
       <Breadcrumbs
@@ -113,7 +117,7 @@ export async function ArtistContent({
 
           {artist.bio && (
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-neutral-500">
-              {convert(artist.bio, { wordwrap: false })}
+              {htmlToPlain(artist.bio)}
             </p>
           )}
         </div>
@@ -167,9 +171,19 @@ export async function getArtistMetadata(slug: string, page: number) {
   // body runs, and the CDN caches the soft-404 for a day.
   if (!artist) notFound();
 
+  // Compose facts we already have (nationality, lifespan, styles) instead of
+  // stamping tens of thousands of identical "Explore artworks by X." pages.
+  const lifespan = [artist.birthYear, artist.deathYear]
+    .filter(Boolean)
+    .join("–");
+  const identity = [artist.nationality, lifespan].filter(Boolean).join(", ");
+  const styleNames = artist.styles
+    .slice(0, 3)
+    .map((s) => s.name)
+    .join(", ");
   const baseDescription = artist.bio
-    ? convert(artist.bio, { wordwrap: false }).slice(0, 160)
-    : `Explore artworks by ${artist.name}.`;
+    ? truncateAtWord(htmlToPlain(artist.bio))
+    : `${artist.name}${identity ? ` (${identity})` : ""} — artworks${styleNames ? ` spanning ${styleNames}` : ""} on VisualArtsDB.`;
 
   const canonical = artistPageHref(slug, page);
   const title = page > 1 ? `${artist.name} — Page ${page}` : artist.name;

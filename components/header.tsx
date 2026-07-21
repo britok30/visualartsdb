@@ -33,12 +33,14 @@ export function Header() {
           <div className="flex items-center gap-4">
             <Link
               href="/favorites"
+              aria-label="Favorites"
               className="text-neutral-400 transition-colors hover:text-neutral-900"
             >
               <Heart size={18} strokeWidth={1.5} />
             </Link>
             <button
               onClick={query.toggle}
+              aria-label="Open search"
               className="flex items-center gap-2 text-neutral-400 transition-colors hover:text-neutral-900"
             >
               <Search size={18} strokeWidth={1.5} />

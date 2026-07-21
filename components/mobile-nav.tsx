@@ -24,6 +24,8 @@ export function MobileNav() {
     <div className="md:hidden">
       <motion.button
         onClick={() => setOpen(!open)}
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
         className="text-neutral-400 transition-colors hover:text-neutral-900"
         whileTap={{ scale: 0.9 }}
       >
