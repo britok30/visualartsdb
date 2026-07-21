@@ -4,7 +4,7 @@ import { getArtworkBySlug } from "@/lib/db/queries";
 export const alt = "Artwork on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
+export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
 
 // Magic bytes for formats Satori actually supports
 const MAGIC = {

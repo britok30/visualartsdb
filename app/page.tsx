@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: `The world's largest visual arts encyclopedia. Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
-export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
+export const revalidate = 86400; // daily — rotates the featured pool and picks up synced art for ~1 query/day
 
 type Section = { name: string; slug: string; title?: string };
 

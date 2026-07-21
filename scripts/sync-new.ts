@@ -1,5 +1,6 @@
 import { Pool } from "@neondatabase/serverless";
 import { triggerRedeploy } from "./trigger-redeploy";
+import { revalidatePaths } from "./revalidate-paths";
 
 const source = new Pool({
   connectionString: process.env.SCRAPE_DATABASE_URL,
@@ -183,6 +184,45 @@ async function syncNewJoinRows(table: string): Promise<number> {
   return inserted;
 }
 
+// Paths whose cached render is stale after new artworks arrive: the affected
+// artists' pages (new works appear in their grids/timeline) plus the homepage.
+// New artwork/artist detail pages need nothing — they've never been rendered,
+// so their first visit is fresh by definition. Browse pages read searchParams
+// and render dynamically, so they self-heal once the CDN's 1h TTL passes.
+async function collectStalePaths(
+  artworkWatermark: string | null
+): Promise<string[]> {
+  if (!artworkWatermark) return [];
+
+  const { rows } = await target.query(
+    `SELECT ar.slug, count(aa.artwork_id)::int AS total
+     FROM artists ar
+     INNER JOIN artwork_artists aa ON aa.artist_id = ar.id
+     WHERE ar.id IN (
+       SELECT DISTINCT aa2.artist_id
+       FROM artwork_artists aa2
+       INNER JOIN artworks a ON a.id = aa2.artwork_id
+       WHERE a.created_at > $1
+     )
+     GROUP BY ar.slug`,
+    [artworkWatermark]
+  );
+
+  const PER_PAGE = 24;
+  const paths: string[] = ["/"];
+  for (const { slug, total } of rows as Array<{
+    slug: string;
+    total: number;
+  }>) {
+    paths.push(`/artist/${slug}`);
+    const pages = Math.ceil(total / PER_PAGE);
+    for (let p = 2; p <= pages; p++) {
+      paths.push(`/artist/${slug}/page/${p}`);
+    }
+  }
+  return paths;
+}
+
 async function main() {
   console.log("🔄 Incremental sync — new rows only\n");
   console.log(
@@ -192,6 +232,9 @@ async function main() {
     `Target: ${process.env.DATABASE_URL?.split("@")[1]?.split("/")[0]}`
   );
   console.log();
+
+  // Watermark BEFORE syncing: artworks newer than this are this run's additions.
+  const artworkWatermark = await getLatestCreatedAt("artworks");
 
   let totalNew = 0;
 
@@ -223,16 +266,27 @@ async function main() {
     }
   }
 
+  // Targeted invalidation of only the pages the new rows made stale — the
+  // full-redeploy path (REDEPLOY_AFTER_SYNC=1) stays as an explicit opt-in
+  // for when the entire rendered cache genuinely must go.
+  let stalePaths: string[] = [];
+  if (totalNew > 0) {
+    stalePaths = await collectStalePaths(artworkWatermark);
+  }
+
   await source.end();
   await target.end();
 
   console.log("\n✅ Incremental sync complete!");
 
-  // Only bust the static cache if something actually changed.
   if (totalNew > 0) {
-    await triggerRedeploy();
+    if (process.env.REDEPLOY_AFTER_SYNC === "1") {
+      await triggerRedeploy();
+    } else {
+      await revalidatePaths(stalePaths);
+    }
   } else {
-    console.log("   (no new rows — skipping redeploy)");
+    console.log("   (no new rows — nothing to revalidate)");
   }
 }
 

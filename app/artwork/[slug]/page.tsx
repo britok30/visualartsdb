@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/json-ld";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getArtworkBySlug, getRelatedArtworks } from "@/lib/db/queries";
 
-export const revalidate = false; // fully static — bust via redeploy/on-demand after a sync
+export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
 
 export async function generateMetadata({
   params,
