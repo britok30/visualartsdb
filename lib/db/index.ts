@@ -13,7 +13,7 @@ const raw = neon(process.env.DATABASE_URL!);
 // retrying liberally is safe. Real query errors (bad SQL, constraint issues)
 // are never FATAL/5xx and still throw immediately.
 const RETRYABLE_CODES = new Set(["57P01", "57P02", "08006", "08P01", "08001"]);
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 7; // backoff totals ~63s — outlasts a slow wake or proxy error-cache window
 
 function isRetryable(err: unknown): boolean {
   const e = err as {
