@@ -21,10 +21,14 @@ export default async function ArtistsPage({
 }: {
   searchParams: Promise<{ page?: string; letter?: string }>;
 }) {
-  const { page: pageStr, letter } = await searchParams;
+  const { page: pageStr, letter: rawLetter } = await searchParams;
   const page = Math.max(1, Number(pageStr) || 1);
   const limit = 60;
   const offset = (page - 1) * limit;
+
+  // Only a single A–Z letter is valid — anything else (e.g. ?letter=%) would
+  // flow into the ILIKE pattern as a wildcard and into pagination hrefs.
+  const letter = /^[A-Za-z]$/.test(rawLetter ?? "") ? rawLetter : undefined;
 
   const where = letter ? ilike(artists.name, `${letter}%`) : undefined;
 

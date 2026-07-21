@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getArtworksByStyle(slug);
-  if (!result) return { title: "Not Found" };
+  if (!result) notFound();
   return {
     alternates: { canonical: `/browse/styles/${slug}` },
     title: result.style.name,

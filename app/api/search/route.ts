@@ -8,6 +8,7 @@ import {
   artworkArtists,
 } from "@/lib/db/schema";
 import { eq, ilike, sql } from "drizzle-orm";
+import { escapeLike } from "@/lib/db/queries";
 
 // CDN-cache repeat queries at the edge so they never wake Neon compute.
 // Browser revalidates fast to keep the UI feeling live; Vercel edge holds 1h fresh + 24h SWR.
@@ -30,8 +31,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const prefixPattern = `${q}%`;
-  const containsPattern = `%${q}%`;
+  const escaped = escapeLike(q);
+  const prefixPattern = `${escaped}%`;
+  const containsPattern = `%${escaped}%`;
 
   const [artistRows, artworkRows, styleRows, genreRows] = await Promise.all([
     // Artists: prioritize short clean names and prefix matches

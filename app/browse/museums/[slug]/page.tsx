@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getArtworksByMuseum(slug);
-  if (!result) return { title: "Not Found" };
+  if (!result) notFound();
   const location = [result.museum.city, result.museum.country].filter(Boolean).join(", ");
   return {
     alternates: { canonical: `/browse/museums/${slug}` },

@@ -513,13 +513,19 @@ export async function getArtworksByMuseum(
 
 // ─── Search ──────────────────────────────────────────────────────
 
+// User input is interpolated into ILIKE patterns — escape the LIKE
+// metacharacters so "%%%" or "_" behave as literals, not wildcards.
+export function escapeLike(input: string): string {
+  return input.replace(/[\\%_]/g, "\\$&");
+}
+
 export const searchArtworks = unstable_cache(async function searchArtworks(
   query: string,
   page = 1,
   limit = 24,
 ) {
   const offset = (page - 1) * limit;
-  const pattern = `%${query}%`;
+  const pattern = `%${escapeLike(query)}%`;
 
   const rows = await db
     .select({
@@ -566,7 +572,7 @@ export const searchArtists = unstable_cache(async function searchArtists(
   limit = 24,
 ) {
   const offset = (page - 1) * limit;
-  const pattern = `%${query}%`;
+  const pattern = `%${escapeLike(query)}%`;
 
   const rows = await db
     .select({

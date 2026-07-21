@@ -162,7 +162,10 @@ export async function ArtistContent({
 
 export async function getArtistMetadata(slug: string, page: number) {
   const artist = await getArtistBySlug(slug);
-  if (!artist) return { title: "Not Found" } as const;
+  // notFound() here (not a "Not Found" title) so missing slugs return a real
+  // 404 status — streamed metadata otherwise flushes a 200 before the page
+  // body runs, and the CDN caches the soft-404 for a day.
+  if (!artist) notFound();
 
   const baseDescription = artist.bio
     ? convert(artist.bio, { wordwrap: false }).slice(0, 160)

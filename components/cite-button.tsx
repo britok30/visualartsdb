@@ -18,9 +18,11 @@ type Format = "mla" | "apa" | "chicago";
 
 function generateCitation(
   format: Format,
-  { artist, title, year, medium, museum }: CiteButtonProps
+  { artist: rawArtist, title, year, medium, museum }: CiteButtonProps
 ): string {
   const yr = year ? String(year) : "n.d.";
+  // Empty artist would otherwise yield citations starting with ". *Title*."
+  const artist = rawArtist || "Unknown artist";
 
   switch (format) {
     case "mla":

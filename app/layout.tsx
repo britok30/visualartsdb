@@ -15,11 +15,15 @@ export const metadata: Metadata = {
     template: `%s — ${SITE_NAME}`,
   },
   description: `The world's largest visual arts encyclopedia. Explore ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums — Impressionism, Surrealism, Baroque, and more.`,
+  // No og/twitter title, description, or twitter.images here: explicit values
+  // in the root layout override every page's own metadata, so all 1M artwork
+  // shares showed the generic site card. With them omitted, Next derives og/
+  // twitter fields from each page's title/description and the per-route
+  // opengraph-image files flow to both og:image and twitter:image. The /og.png
+  // fallback below applies only to routes without their own image.
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — The World's Largest Visual Arts Encyclopedia`,
-    description: `The world's largest visual arts encyclopedia — ${SITE_STATS.artworks} artworks across ${SITE_STATS.artists} artists, ${SITE_STATS.styles} styles, and ${SITE_STATS.museums} museums.`,
     images: [
       {
         url: "/og.png",
@@ -31,7 +35,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og.png"],
   },
 };
 

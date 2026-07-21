@@ -29,7 +29,10 @@ export default async function SearchPage({
 }) {
   const { q, page: pageStr } = await searchParams;
   const page = Math.max(1, Number(pageStr) || 1);
-  const query = q?.trim() ?? "";
+  // Same 3-char floor as /api/search: shorter patterns can't use the pg_trgm
+  // index and would force two seq scans over ~1M rows per request.
+  const raw = q?.trim() ?? "";
+  const query = raw.length >= 3 ? raw : "";
 
   let artworksResult = null;
   let artistsResult = null;
@@ -44,7 +47,7 @@ export default async function SearchPage({
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="mx-auto max-w-lg">
-        <SearchBar defaultValue={query} large />
+        <SearchBar defaultValue={raw} large />
       </div>
 
       {query && artworksResult && artistsResult && (

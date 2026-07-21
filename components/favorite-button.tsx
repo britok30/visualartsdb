@@ -2,14 +2,19 @@
 
 import { Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import {
   addFavorite,
   removeFavorite,
-  isFavorite,
+  getFavorites,
+  subscribeFavorites,
+  type FavoriteItem,
   type FavoriteType,
 } from "@/lib/favorites";
+
+const SERVER_SNAPSHOT: FavoriteItem[] = [];
+const getServerSnapshot = () => SERVER_SNAPSHOT;
 
 interface FavoriteButtonProps {
   id: string;
@@ -32,15 +37,16 @@ export function FavoriteButton({
   size = 18,
   variant = "default",
 }: FavoriteButtonProps) {
-  const [saved, setSaved] = useState(() => isFavorite(id));
-
-  useEffect(() => {
-    function onChanged() {
-      setSaved(isFavorite(id));
-    }
-    window.addEventListener("favorites-changed", onChanged);
-    return () => window.removeEventListener("favorites-changed", onChanged);
-  }, [id]);
+  // useSyncExternalStore hydrates with the (empty) server snapshot, then
+  // re-renders with the real localStorage value — no hydration mismatch, and
+  // no manual event wiring. Reading localStorage in a useState initializer
+  // previously caused mismatch errors for anyone with saved items.
+  const favorites = useSyncExternalStore(
+    subscribeFavorites,
+    getFavorites,
+    getServerSnapshot,
+  );
+  const saved = favorites.some((f) => f.id === id);
 
   function toggle(e: React.MouseEvent) {
     e.preventDefault();

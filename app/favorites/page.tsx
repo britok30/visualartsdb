@@ -7,14 +7,10 @@ import { useSyncExternalStore } from "react";
 import { ArtworkImage } from "@/components/artwork-image";
 import {
   getFavorites,
+  subscribeFavorites,
   removeFavorite,
   type FavoriteItem,
 } from "@/lib/favorites";
-
-function subscribeFavorites(onStoreChange: () => void) {
-  window.addEventListener("favorites-changed", onStoreChange);
-  return () => window.removeEventListener("favorites-changed", onStoreChange);
-}
 
 function getServerFavoritesSnapshot(): FavoriteItem[] {
   return [];

@@ -57,8 +57,7 @@ export function ArtworkCard({
             {title}
           </h3>
           <p className="mt-0.5 text-xs text-neutral-400">
-            {artistName}
-            {year ? `, ${year}` : ""}
+            {[artistName, year].filter(Boolean).join(", ")}
           </p>
         </div>
       </Link>

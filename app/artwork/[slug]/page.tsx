@@ -21,15 +21,20 @@ export async function generateMetadata({
   const { slug } = await params;
   const artwork = await getArtworkBySlug(slug);
 
-  if (!artwork) return { title: "Not Found" };
+  if (!artwork) notFound();
 
+  // ~65k artworks have no linked artist — omit "by …" rather than render
+  // "Title by " in titles and descriptions.
   const artistNames = artwork.artists.map((a) => a.name).join(", ");
+  const displayTitle = artistNames
+    ? `${artwork.title} by ${artistNames}`
+    : artwork.title;
   return {
     alternates: { canonical: `/artwork/${slug}` },
-    title: `${artwork.title} by ${artistNames}`,
+    title: displayTitle,
     description: artwork.description
       ? convert(artwork.description, { wordwrap: false }).slice(0, 160)
-      : `${artwork.title} by ${artistNames}`,
+      : displayTitle,
   };
 }
 

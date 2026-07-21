@@ -22,7 +22,12 @@ const RETRYABLE_CODES = new Set([
   "08001",
   "53200",
 ]);
-const MAX_ATTEMPTS = 7; // backoff totals ~63s — outlasts a slow wake or proxy error-cache window
+// Build-time rendering can afford a long ladder (~63s) to outlast a slow wake
+// or proxy error-cache window. At request time, Vercel's function timeout
+// would cut the response into a raw 504 before a long ladder finishes — cap
+// it so failures reach error.tsx instead (~3s of backoff + query time).
+const MAX_ATTEMPTS =
+  process.env.NEXT_PHASE === "phase-production-build" ? 7 : 3;
 
 function isRetryable(err: unknown): boolean {
   const e = err as {

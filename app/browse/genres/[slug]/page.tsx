@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const result = await getArtworksByGenre(slug);
-  if (!result) return { title: "Not Found" };
+  if (!result) notFound();
   return {
     alternates: { canonical: `/browse/genres/${slug}` },
     title: result.genre.name,

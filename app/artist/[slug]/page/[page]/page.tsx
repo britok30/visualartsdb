@@ -20,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, page } = await params;
   const n = parsePage(page);
-  if (n === null) return { title: "Not Found" };
+  if (n === null) notFound();
   return getArtistMetadata(slug, n);
 }
 

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { notFound } from "next/navigation";
 import { getArtistBySlug } from "@/lib/db/queries";
 
 export const alt = "Artist on VisualArtsDB";
@@ -49,10 +50,13 @@ interface OgData {
 }
 
 async function getOgData(slug: string): Promise<OgData | null> {
-  try {
-    const artist = await getArtistBySlug(slug);
-    if (!artist) return null;
+  // Missing slug 404s (outside the try so notFound()'s throw isn't swallowed);
+  // the catch below covers only render-data failures for REAL artists, so a
+  // DB hiccup still yields a branded fallback instead of an error.
+  const artist = await getArtistBySlug(slug);
+  if (!artist) notFound();
 
+  try {
     const name = sanitize(artist.name);
     const lifespan = [
       artist.birthYear && `b. ${artist.birthYear}`,
