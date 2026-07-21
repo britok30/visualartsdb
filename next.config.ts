@@ -25,6 +25,23 @@ const nextConfig: NextConfig = {
       new URL("https://images.metmuseum.org/**"),
     ],
   },
+  // Legacy ?page=N URLs → path-based pagination. Handling this at the edge
+  // keeps the pages themselves free of searchParams (reading searchParams
+  // would opt them into dynamic rendering on every request).
+  async redirects() {
+    const legacyPageQuery = (source: string) => ({
+      source,
+      has: [{ type: "query" as const, key: "page", value: "(?<p>\\d+)" }],
+      destination: `${source}/page/:p`,
+      permanent: true,
+    });
+    return [
+      legacyPageQuery("/artist/:slug"),
+      legacyPageQuery("/browse/styles/:slug"),
+      legacyPageQuery("/browse/genres/:slug"),
+      legacyPageQuery("/browse/museums/:slug"),
+    ];
+  },
   async headers() {
     const cdnLong = "public, s-maxage=86400, stale-while-revalidate=604800";
     const cdnMedium = "public, s-maxage=3600, stale-while-revalidate=86400";

@@ -185,10 +185,13 @@ async function syncNewJoinRows(table: string): Promise<number> {
 }
 
 // Paths whose cached render is stale after new artworks arrive: the affected
-// artists' pages (new works appear in their grids/timeline) plus the homepage.
+// artists' pages (new works appear in their grids/timeline), the browse pages
+// for the styles/genres/museums the new works belong to (now statically
+// rendered, so they no longer self-heal via CDN TTL), and the homepage.
 // New artwork/artist detail pages need nothing — they've never been rendered,
-// so their first visit is fresh by definition. Browse pages read searchParams
-// and render dynamically, so they self-heal once the CDN's 1h TTL passes.
+// so their first visit is fresh by definition. Deep browse pagination is left
+// to the 30-day revalidate window: a sync shifts each listing by a few items,
+// and revalidating thousands of /page/N paths per sync isn't worth it.
 async function collectStalePaths(
   artworkWatermark: string | null
 ): Promise<string[]> {
@@ -208,8 +211,32 @@ async function collectStalePaths(
     [artworkWatermark]
   );
 
+  const { rows: facetRows } = await target.query(
+    `SELECT DISTINCT '/browse/styles/' || s.slug AS path
+       FROM styles s
+       INNER JOIN artwork_styles ast ON ast.style_id = s.id
+       INNER JOIN artworks a ON a.id = ast.artwork_id
+       WHERE a.created_at > $1
+     UNION
+     SELECT DISTINCT '/browse/genres/' || g.slug
+       FROM genres g
+       INNER JOIN artworks a ON a.genre_id = g.id
+       WHERE a.created_at > $1
+     UNION
+     SELECT DISTINCT '/browse/museums/' || m.slug
+       FROM museums m
+       INNER JOIN artworks a ON a.museum_id = m.id
+       WHERE a.created_at > $1`,
+    [artworkWatermark]
+  );
+
   const PER_PAGE = 24;
-  const paths: string[] = ["/"];
+  const paths: string[] = [
+    "/",
+    "/browse/styles",
+    "/browse/genres",
+    "/browse/museums",
+  ];
   for (const { slug, total } of rows as Array<{
     slug: string;
     total: number;
@@ -219,6 +246,9 @@ async function collectStalePaths(
     for (let p = 2; p <= pages; p++) {
       paths.push(`/artist/${slug}/page/${p}`);
     }
+  }
+  for (const { path } of facetRows as Array<{ path: string }>) {
+    paths.push(path);
   }
   return paths;
 }

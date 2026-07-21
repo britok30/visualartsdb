@@ -326,6 +326,22 @@ export async function getArtistTimelineArtworks(
 
 // ─── Browse ──────────────────────────────────────────────────────
 
+// Totals for the browse index pagination (tiny tables — cheap counts).
+export async function countStyles() {
+  const [r] = await db.select({ value: count() }).from(styles);
+  return r.value;
+}
+
+export async function countGenres() {
+  const [r] = await db.select({ value: count() }).from(genres);
+  return r.value;
+}
+
+export async function countMuseums() {
+  const [r] = await db.select({ value: count() }).from(museums);
+  return r.value;
+}
+
 export async function getStylesWithCounts(page = 1, limit = 48) {
   const offset = (page - 1) * limit;
 

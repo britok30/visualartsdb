@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  ArtistContent,
-  artistPageHref,
-  getArtistMetadata,
-} from "./artist-content";
+import { ArtistContent, getArtistMetadata } from "./artist-content";
 
 export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
+
+// Legacy ?page=N URLs are redirected in next.config.ts — reading searchParams
+// here would opt this page into dynamic rendering on every request.
 
 export async function generateMetadata({
   params,
@@ -19,18 +17,9 @@ export async function generateMetadata({
 
 export default async function ArtistPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
 }) {
   const { slug } = await params;
-  const { page: pageStr } = await searchParams;
-
-  if (pageStr !== undefined) {
-    const legacyPage = Math.max(1, Number(pageStr) || 1);
-    redirect(artistPageHref(slug, legacyPage));
-  }
-
   return <ArtistContent slug={slug} page={1} />;
 }

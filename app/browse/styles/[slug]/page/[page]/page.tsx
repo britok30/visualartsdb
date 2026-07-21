@@ -1,17 +1,12 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
-  ArtistContent,
-  getArtistMetadata,
-} from "../../artist-content";
+  BrowseDetailContent,
+  getBrowseMetadata,
+  parsePage,
+} from "@/components/browse-detail";
 
 export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
-
-function parsePage(raw: string): number | null {
-  if (!/^\d+$/.test(raw)) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 1 ? n : null;
-}
 
 export async function generateMetadata({
   params,
@@ -21,10 +16,10 @@ export async function generateMetadata({
   const { slug, page } = await params;
   const n = parsePage(page);
   if (n === null) notFound();
-  return getArtistMetadata(slug, n);
+  return getBrowseMetadata("styles", slug, n);
 }
 
-export default async function ArtistPaginatedPage({
+export default async function StylePaginatedPage({
   params,
 }: {
   params: Promise<{ slug: string; page: string }>;
@@ -32,7 +27,7 @@ export default async function ArtistPaginatedPage({
   const { slug, page } = await params;
   const n = parsePage(page);
   if (n === null) notFound();
-  if (n === 1) permanentRedirect(`/artist/${slug}`);
+  if (n === 1) permanentRedirect(`/browse/styles/${slug}`);
 
-  return <ArtistContent slug={slug} page={n} />;
+  return <BrowseDetailContent kind="styles" slug={slug} page={n} />;
 }

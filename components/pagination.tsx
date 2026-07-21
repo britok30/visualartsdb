@@ -24,14 +24,22 @@ function pageWindow(page: number, totalPages: number): (number | "…")[] {
   return items;
 }
 
+// Evenly spaced jump anchors, capped at ~24 links. The previous version
+// listed EVERY page — tens of thousands of DOM nodes for big genres.
+function jumpMilestones(totalPages: number): number[] {
+  const MAX_LINKS = 24;
+  const step = Math.max(1, Math.ceil(totalPages / MAX_LINKS));
+  const pages: number[] = [];
+  for (let p = step; p < totalPages; p += step) pages.push(p);
+  pages.push(totalPages);
+  return pages;
+}
+
 export function Pagination({ page, totalPages, href }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   const items = pageWindow(page, totalPages);
-  const showFullIndex = totalPages > 7;
-  const allPages = showFullIndex
-    ? Array.from({ length: totalPages }, (_, i) => i + 1)
-    : null;
+  const allPages = totalPages > 7 ? jumpMilestones(totalPages) : null;
 
   return (
     <>

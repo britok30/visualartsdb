@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import {
-  artworks,
-  artists,
-  styles,
-  genres,
-  artworkArtists,
-} from "@/lib/db/schema";
-import { eq, ilike, sql } from "drizzle-orm";
+import { artists, styles, genres } from "@/lib/db/schema";
+import { ilike, sql } from "drizzle-orm";
 import { escapeLike } from "@/lib/db/queries";
 
 // CDN-cache repeat queries at the edge so they never wake Neon compute.
@@ -53,24 +47,39 @@ export async function GET(request: NextRequest) {
       )
       .limit(5),
 
-    // Artworks: deduplicated, prioritize prefix matches
+    // Artworks: deduplicated, then RANKED. DISTINCT ON requires ORDER BY id,
+    // so ranking must happen in an outer query — the previous single-level
+    // version returned the 6 matches with the lowest UUIDs (i.e. random).
+    // The inner LIMIT bounds the candidate pool so a broad query can't
+    // materialize thousands of rows on the 0.25 CU compute.
     db
-      .selectDistinctOn([artworks.id], {
-        id: artworks.id,
-        title: artworks.title,
-        slug: artworks.slug,
-        year: artworks.year,
-        artistName: sql<string>`${artists.name}`.as("artist_name"),
-      })
-      .from(artworks)
-      .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-      .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-      .where(ilike(artworks.title, containsPattern))
-      .orderBy(
-        artworks.id,
-        sql`CASE WHEN ${artworks.title} ILIKE ${prefixPattern} THEN 0 ELSE 1 END`
-      )
-      .limit(6),
+      .execute(sql`
+        SELECT id, title, slug, year, "artistName" FROM (
+          SELECT DISTINCT ON (a.id)
+            a.id, a.title, a.slug, a.year, ar.name AS "artistName"
+          FROM artworks a
+          INNER JOIN artwork_artists aa ON aa.artwork_id = a.id
+          INNER JOIN artists ar ON ar.id = aa.artist_id
+          WHERE a.title ILIKE ${containsPattern}
+          ORDER BY a.id
+          LIMIT 200
+        ) t
+        ORDER BY
+          CASE WHEN t.title ILIKE ${prefixPattern} THEN 0 ELSE 1 END,
+          length(t.title),
+          t.title
+        LIMIT 6
+      `)
+      .then(
+        (r) =>
+          r.rows as unknown as Array<{
+            id: string;
+            title: string;
+            slug: string;
+            year: number | null;
+            artistName: string;
+          }>,
+      ),
 
     // Styles
     db
