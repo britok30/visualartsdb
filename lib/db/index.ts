@@ -12,7 +12,16 @@ const raw = neon(process.env.DATABASE_URL!);
 // (~15s total). Every query this client runs is a read-only SELECT, so
 // retrying liberally is safe. Real query errors (bad SQL, constraint issues)
 // are never FATAL/5xx and still throw immediately.
-const RETRYABLE_CODES = new Set(["57P01", "57P02", "08006", "08P01", "08001"]);
+// 53200 = out of memory: transient under concurrent load on a small compute;
+// by the retry the burst has passed. Safe because all queries are reads.
+const RETRYABLE_CODES = new Set([
+  "57P01",
+  "57P02",
+  "08006",
+  "08P01",
+  "08001",
+  "53200",
+]);
 const MAX_ATTEMPTS = 7; // backoff totals ~63s — outlasts a slow wake or proxy error-cache window
 
 function isRetryable(err: unknown): boolean {

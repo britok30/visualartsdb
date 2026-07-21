@@ -85,15 +85,29 @@ const GENRE_SECTIONS: Section[] = [
   { name: "Illustrated books", slug: "illustrated-books" },
 ];
 
+// The homepage needs 43 section queries. Firing them all at once OOMs the
+// 0.25 CU compute (each concurrent backend claims its own work memory), so run
+// them in small batches — this page renders once a day, latency is irrelevant.
+async function inBatches<T>(
+  tasks: Array<() => Promise<T>>,
+  size = 4,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < tasks.length; i += size) {
+    out.push(...(await Promise.all(tasks.slice(i, i + size).map((t) => t()))));
+  }
+  return out;
+}
+
 export default async function Home() {
   // Stats come from the SITE_STATS constant (also used in metadata) instead of
   // 5 live COUNT(*) full-table scans per homepage regeneration.
   // Fetch a larger POOL per row (built once per deploy); ScrollRow shuffles each
   // pool down to 20 per visit on the client for variety with no per-request DB.
-  const [featured, ...rest] = await Promise.all([
-    getFeaturedArtworks(60),
-    ...STYLE_SECTIONS.map((s) => getArtworksByStyleName(s.name, 40)),
-    ...GENRE_SECTIONS.map((g) => getArtworksByGenreName(g.name, 40)),
+  const [featured, ...rest] = await inBatches([
+    () => getFeaturedArtworks(60),
+    ...STYLE_SECTIONS.map((s) => () => getArtworksByStyleName(s.name, 40)),
+    ...GENRE_SECTIONS.map((g) => () => getArtworksByGenreName(g.name, 40)),
   ]);
 
   const styleSections = rest.slice(0, STYLE_SECTIONS.length);
