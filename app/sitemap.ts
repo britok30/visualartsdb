@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { artworks, artists, artworkArtists } from "@/lib/db/schema";
-import { eq, sql, isNotNull } from "drizzle-orm";
+import { artworks } from "@/lib/db/schema";
+import { sql, isNotNull } from "drizzle-orm";
 
 const BASE_URL = "https://www.visualartsdb.com";
 const BATCH_SIZE = 50000;
@@ -90,13 +90,18 @@ export default async function sitemap(props: {
 
   if (id <= ARTIST_SITEMAPS) {
     const offset = (id - 1) * BATCH_SIZE;
-    const rows = await db
-      .selectDistinctOn([artists.id], { slug: artists.slug })
-      .from(artists)
-      .innerJoin(artworkArtists, eq(artists.id, artworkArtists.artistId))
-      .orderBy(artists.id)
-      .limit(BATCH_SIZE)
-      .offset(offset);
+    // EXISTS semi-join instead of DISTINCT ON + INNER JOIN: the join build
+    // over 1.2M artwork_artists rows OOM-crashed the 0.25 CU compute during
+    // builds; the semi-join streams off the artist_id index.
+    const result = await db.execute(sql`
+      SELECT ar.slug FROM artists ar
+      WHERE EXISTS (
+        SELECT 1 FROM artwork_artists aa WHERE aa.artist_id = ar.id
+      )
+      ORDER BY ar.id
+      LIMIT ${BATCH_SIZE} OFFSET ${offset}
+    `);
+    const rows = result.rows as unknown as Array<{ slug: string }>;
 
     return rows.map((a) => ({
       url: `${BASE_URL}/artist/${a.slug}`,

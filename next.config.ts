@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   staticPageGenerationTimeout: 180,
+  experimental: {
+    // Build-time page generation runs against a 0.25 CU (1 GB) Neon compute:
+    // parallel workers each firing sitemap/homepage queries can OOM-crash
+    // Postgres mid-build. One page at a time in one worker keeps the build
+    // reliable; ~19 static pages, so the added wall-clock is small.
+    staticGenerationMaxConcurrency: 1,
+    staticGenerationMinPagesPerWorker: 100,
+    staticGenerationRetryCount: 2,
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
