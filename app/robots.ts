@@ -4,7 +4,7 @@ export const revalidate = 86400;
 
 // Must match sitemap.ts constants
 const ARTIST_SITEMAPS = 3;
-const ARTWORK_SITEMAPS = 30;
+const ARTWORK_SITEMAPS = 40;
 const INCLUDE_ARTWORK_SITEMAPS = process.env.INCLUDE_ARTWORK_SITEMAPS === "1";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
