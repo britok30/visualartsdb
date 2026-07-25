@@ -70,7 +70,10 @@ export async function getArtworksByStyleName(
     INNER JOIN artwork_styles ast ON ast.artwork_id = a.id
     INNER JOIN styles s ON s.id = ast.style_id
     WHERE s.name = ${styleName} AND a.image_url IS NOT NULL
-    ORDER BY a.id
+    -- No ORDER BY: it forced a sort/scan of the style's entire body of work
+    -- (166s for Impressionism at 1.6M artworks, timing out the build) for an
+    -- ordering the client discards anyway — ScrollRow shuffles this pool.
+    -- Unordered + LIMIT lets the planner stop at the first 40 index hits (~2s).
     LIMIT ${limit}
   `);
   return result.rows as unknown as HomeArtwork[];
@@ -95,7 +98,7 @@ export async function getArtworksByGenreName(
     FROM artworks a
     INNER JOIN genres g ON g.id = a.genre_id
     WHERE g.name = ${genreName} AND a.image_url IS NOT NULL
-    ORDER BY a.id
+    -- Unordered for the same reason as getArtworksByStyleName (76s -> 1.2s).
     LIMIT ${limit}
   `);
   return result.rows as unknown as HomeArtwork[];

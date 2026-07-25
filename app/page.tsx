@@ -14,7 +14,11 @@ export const metadata: Metadata = {
   description: `The world's largest visual arts encyclopedia. Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
-export const revalidate = 86400; // daily — rotates the featured pool and picks up synced art for ~1 query/day
+// Build-time only. Rendering this page costs ~90-140s of DB work (43 section
+// queries), which cannot finish inside a serverless function's timeout — a
+// runtime revalidation would fail every time and just keep serving stale.
+// Fresh content therefore comes from a redeploy, not a timer.
+export const revalidate = false;
 
 type Section = { name: string; slug: string; title?: string };
 

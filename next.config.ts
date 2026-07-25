@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  staticPageGenerationTimeout: 180,
+  // The homepage runs 43 section queries against a 1.6M-row table on a
+  // 0.25 CU compute (~90-140s total). 180s left no margin; builds have
+  // minutes to spare, so give it room rather than failing the deploy.
+  staticPageGenerationTimeout: 420,
   experimental: {
     // Build-time page generation runs against a 0.25 CU (1 GB) Neon compute:
     // parallel workers each firing sitemap/homepage queries can OOM-crash
