@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { Hero } from "@/components/hero";
 import { ScrollRow } from "@/components/scroll-row";
 import { SITE_NAME, SITE_STATS } from "@/lib/constants";
-import {
-  getFeaturedArtworks,
-  getArtworksByStyleName,
-  getArtworksByGenreName,
-} from "@/lib/db/queries";
+import { STYLE_SECTIONS, GENRE_SECTIONS } from "@/lib/home-sections";
+import type { HomeArtwork } from "@/lib/db/queries";
+import snapshot from "@/lib/home-snapshot.json";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -14,109 +12,19 @@ export const metadata: Metadata = {
   description: `The world's largest visual arts encyclopedia. Discover ${SITE_STATS.artworks} artworks by ${SITE_STATS.artists} artists across Impressionism, Surrealism, Baroque, Pop Art, and more. Search by style, genre, museum, or artist.`,
 };
 
-// Build-time only. Rendering this page costs ~90-140s of DB work (43 section
-// queries), which cannot finish inside a serverless function's timeout — a
-// runtime revalidation would fail every time and just keep serving stale.
-// Fresh content therefore comes from a redeploy, not a timer.
+// Zero database queries: the 43 section pools are precomputed into
+// lib/home-snapshot.json by scripts/build-home-snapshot.ts. Querying them live
+// cost ~2 minutes of build time, and the only query shape fast enough at 1.6M
+// rows always returned the physically-oldest rows — so newly imported works
+// never surfaced here. Sampling properly is cheap to do once, offline.
+// Refresh with `npx tsx scripts/build-home-snapshot.ts` after a sync.
 export const revalidate = false;
 
-type Section = { name: string; slug: string; title?: string };
+const featured = snapshot.featured as unknown as HomeArtwork[];
+const styles = snapshot.styles as unknown as Record<string, HomeArtwork[]>;
+const genres = snapshot.genres as unknown as Record<string, HomeArtwork[]>;
 
-const STYLE_SECTIONS: Section[] = [
-  // Flagship
-  { name: "Impressionism", slug: "impressionism" },
-
-  // Renaissance era
-  { name: "Early Renaissance", slug: "early-renaissance" },
-  { name: "Northern Renaissance", slug: "northern-renaissance" },
-  { name: "Mannerism (Late Renaissance)", slug: "mannerism-late-renaissance" },
-
-  // Baroque through Romanticism
-  { name: "Baroque", slug: "baroque" },
-  { name: "Rococo", slug: "rococo" },
-  { name: "Neoclassicism", slug: "neoclassicism" },
-  { name: "Romanticism", slug: "romanticism" },
-  { name: "Realism", slug: "realism" },
-  { name: "Academicism", slug: "academicism" },
-
-  // Late 19th century
-  { name: "Symbolism", slug: "symbolism" },
-  { name: "Post-Impressionism", slug: "post-impressionism" },
-  { name: "Art Nouveau (Modern)", slug: "art-nouveau-modern" },
-
-  // Early 20th century
-  { name: "Fauvism", slug: "fauvism" },
-  { name: "Expressionism", slug: "expressionism" },
-  { name: "Cubism", slug: "cubism" },
-  { name: "Constructivism", slug: "constructivism" },
-  { name: "bauhaus", slug: "bauhaus", title: "Bauhaus" },
-  { name: "Art Deco", slug: "art-deco" },
-  { name: "Surrealism", slug: "surrealism" },
-
-  // Mid–late 20th century
-  { name: "Abstract Expressionism", slug: "abstract-expressionism" },
-  { name: "Abstract Art", slug: "abstract-art" },
-  { name: "Modernism", slug: "modernism" },
-  { name: "Pop Art", slug: "pop-art" },
-  { name: "Minimalism", slug: "minimalism" },
-  { name: "Conceptual Art", slug: "conceptual-art" },
-  { name: "Street art", slug: "street-art", title: "Street Art" },
-
-  // Outsider / folk
-  { name: "Naïve Art (Primitivism)", slug: "naive-art-primitivism" },
-
-  // Cultural traditions
-  { name: "Japanese Art", slug: "japanese-art" },
-  { name: "Chinese Art", slug: "chinese-art" },
-  { name: "Korean Art", slug: "korean-art" },
-  { name: "Indian and Southeast Asian Art", slug: "indian-and-southeast-asian-art" },
-  { name: "Arts of the Islamic World", slug: "arts-of-the-islamic-world", title: "Islamic Art" },
-  { name: "African Art", slug: "african-art" },
-];
-
-// NOTE: `name` must match genres.name EXACTLY (the section query and the
-// /browse/genres/[slug] link both look up by these). The DB stores capitalized,
-// pluralized names — the previous lowercase-singular values matched nothing, so
-// every genre row rendered blank. Values below verified against the DB.
-const GENRE_SECTIONS: Section[] = [
-  { name: "Paintings", slug: "paintings" },
-  { name: "Photographs", slug: "photographs" },
-  { name: "Sculpture", slug: "sculpture" },
-  { name: "Drawings", slug: "drawings" },
-  { name: "Print", slug: "print", title: "Prints" },
-  { name: "Ceramics", slug: "ceramics" },
-  { name: "Textiles", slug: "textiles" },
-  { name: "Illustrated books", slug: "illustrated-books" },
-];
-
-// The homepage needs 43 section queries. Firing them all at once OOMs the
-// 0.25 CU compute (each concurrent backend claims its own work memory), so run
-// them in small batches — this page renders once a day, latency is irrelevant.
-async function inBatches<T>(
-  tasks: Array<() => Promise<T>>,
-  size = 4,
-): Promise<T[]> {
-  const out: T[] = [];
-  for (let i = 0; i < tasks.length; i += size) {
-    out.push(...(await Promise.all(tasks.slice(i, i + size).map((t) => t()))));
-  }
-  return out;
-}
-
-export default async function Home() {
-  // Stats come from the SITE_STATS constant (also used in metadata) instead of
-  // 5 live COUNT(*) full-table scans per homepage regeneration.
-  // Fetch a larger POOL per row (built once per deploy); ScrollRow shuffles each
-  // pool down to 20 per visit on the client for variety with no per-request DB.
-  const [featured, ...rest] = await inBatches([
-    () => getFeaturedArtworks(60),
-    ...STYLE_SECTIONS.map((s) => () => getArtworksByStyleName(s.name, 40)),
-    ...GENRE_SECTIONS.map((g) => () => getArtworksByGenreName(g.name, 40)),
-  ]);
-
-  const styleSections = rest.slice(0, STYLE_SECTIONS.length);
-  const genreSections = rest.slice(STYLE_SECTIONS.length);
-
+export default function Home() {
   return (
     <div>
       <Hero
@@ -128,28 +36,36 @@ export default async function Home() {
       <div className="space-y-16">
         <ScrollRow title="Discover" artworks={featured} shuffleTo={20} priority />
 
-        {STYLE_SECTIONS.map((section, i) => (
-          <ScrollRow
-            key={section.slug}
-            title={section.title ?? section.name}
-            href={`/browse/styles/${section.slug}`}
-            artworks={styleSections[i]}
-            shuffleTo={20}
-          />
-        ))}
+        {STYLE_SECTIONS.map((section) => {
+          const artworks = styles[section.slug] ?? [];
+          if (artworks.length === 0) return null;
+          return (
+            <ScrollRow
+              key={section.slug}
+              title={section.title ?? section.name}
+              href={`/browse/styles/${section.slug}`}
+              artworks={artworks}
+              shuffleTo={20}
+            />
+          );
+        })}
 
-        {GENRE_SECTIONS.map((section, i) => (
-          <ScrollRow
-            key={section.slug}
-            title={
-              section.title ??
-              section.name.charAt(0).toUpperCase() + section.name.slice(1)
-            }
-            href={`/browse/genres/${section.slug}`}
-            artworks={genreSections[i]}
-            shuffleTo={20}
-          />
-        ))}
+        {GENRE_SECTIONS.map((section) => {
+          const artworks = genres[section.slug] ?? [];
+          if (artworks.length === 0) return null;
+          return (
+            <ScrollRow
+              key={section.slug}
+              title={
+                section.title ??
+                section.name.charAt(0).toUpperCase() + section.name.slice(1)
+              }
+              href={`/browse/genres/${section.slug}`}
+              artworks={artworks}
+              shuffleTo={20}
+            />
+          );
+        })}
       </div>
     </div>
   );

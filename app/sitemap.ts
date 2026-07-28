@@ -108,16 +108,14 @@ export default async function sitemap(props: {
 
   if (id <= ARTIST_SITEMAPS) {
     const { from, to } = uuidRange(id - 1, ARTIST_SITEMAPS);
-    // EXISTS semi-join instead of DISTINCT ON + INNER JOIN: the join build
-    // over 1.2M artwork_artists rows OOM-crashed the 0.25 CU compute during
-    // builds; the semi-join streams off the artist_id index.
+    // No artwork-count filter: probing artwork_artists (1.7M rows) per artist
+    // cost 70-420s per shard and kept timing out builds. Including the ~2%
+    // of artists without artworks costs a little thin content; a plain index
+    // range scan runs in ~1s and never fails the build.
     const result = await db.execute(sql`
       SELECT ar.slug, ar.updated_at FROM artists ar
       WHERE ar.id >= ${from}::uuid
         ${to ? sql`AND ar.id < ${to}::uuid` : sql``}
-        AND EXISTS (
-          SELECT 1 FROM artwork_artists aa WHERE aa.artist_id = ar.id
-        )
     `);
     const rows = result.rows as unknown as Array<{
       slug: string;
