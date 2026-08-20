@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkBotId } from "botid/server";
 import { db } from "@/lib/db";
 import { artists, styles, genres } from "@/lib/db/schema";
 import { ilike, sql } from "drizzle-orm";
@@ -15,6 +16,17 @@ const CACHE_HEADERS = {
 };
 
 export async function GET(request: NextRequest) {
+  // Runs only on CDN cache misses — the requests that would wake Neon.
+  // Rejections are uncacheable on purpose: a bot 403 must never be served
+  // from the CDN to a real user issuing the same query.
+  const verification = await checkBotId();
+  if (verification.isBot) {
+    return NextResponse.json(
+      { error: "Access denied" },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const q = request.nextUrl.searchParams.get("q")?.trim();
   // Min 3 chars — pg_trgm cannot use the GIN index for shorter patterns,
   // so anything below 3 would force a seq scan on every artwork.
