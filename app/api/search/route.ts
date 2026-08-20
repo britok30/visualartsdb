@@ -16,14 +16,15 @@ const CACHE_HEADERS = {
 };
 
 export async function GET(request: NextRequest) {
-  // Runs only on CDN cache misses — the requests that would wake Neon.
-  // Rejections are uncacheable on purpose: a bot 403 must never be served
-  // from the CDN to a real user issuing the same query.
+  // LOG-ONLY for now: classification misfired on real browsers (2026-08-20),
+  // so record the verdict without enforcing until the logs show clean
+  // separation. Runs only on CDN cache misses — the requests that would
+  // wake Neon.
   const verification = await checkBotId();
   if (verification.isBot) {
-    return NextResponse.json(
-      { error: "Access denied" },
-      { status: 403, headers: { "Cache-Control": "no-store" } },
+    console.log(
+      `[botid] would-block search q=${JSON.stringify(request.nextUrl.searchParams.get("q") ?? "")} ` +
+        `verified=${verification.isVerifiedBot ?? false}`,
     );
   }
 
