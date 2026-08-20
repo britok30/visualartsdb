@@ -1,6 +1,11 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
 import { getArtworkBySlug } from "@/lib/db/queries";
+import {
+  AIC_COURTESY_HEADER,
+  isAicUrl,
+  rewriteGettySize,
+} from "@/lib/artwork-image-url";
 
 export const alt = "Artwork on VisualArtsDB";
 export const size = { width: 1200, height: 630 };
@@ -23,7 +28,12 @@ function detectMime(bytes: Uint8Array): string | null {
 
 async function fetchImageAsDataUri(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    // Server-side fetch: AIC needs its courtesy header to clear their
+    // Cloudflare challenge; Getty needs IIIF v3-safe sizing.
+    const res = await fetch(rewriteGettySize(url), {
+      signal: AbortSignal.timeout(5000),
+      headers: isAicUrl(url) ? { "AIC-User-Agent": AIC_COURTESY_HEADER } : {},
+    });
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     if (buf.byteLength < 8 || buf.byteLength > 4_000_000) return null;

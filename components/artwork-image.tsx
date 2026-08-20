@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { useState } from "react";
+import { resolveArtworkImageUrl } from "@/lib/artwork-image-url";
 
 interface ArtworkImageProps {
   src: string;
@@ -42,12 +43,13 @@ export function ArtworkImage({
   loading,
   priority,
 }: ArtworkImageProps) {
-  const fallbackSrc = stripWikiArtSuffix(src);
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const resolvedSrc = resolveArtworkImageUrl(src);
+  const fallbackSrc = stripWikiArtSuffix(resolvedSrc);
+  const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
   const [failed, setFailed] = useState(false);
 
   function handleError() {
-    if (currentSrc === src && fallbackSrc) {
+    if (currentSrc === resolvedSrc && fallbackSrc) {
       setCurrentSrc(fallbackSrc);
     } else {
       setFailed(true);

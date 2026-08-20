@@ -3,6 +3,7 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { resolveArtworkImageUrl } from "@/lib/artwork-image-url";
 
 interface DownloadButtonProps {
   imageUrl: string;
@@ -14,8 +15,11 @@ export function DownloadButton({ imageUrl, filename }: DownloadButtonProps) {
 
   async function handleDownload() {
     setLoading(true);
+    // AIC blocks cross-origin fetches; the resolved URL goes through our
+    // same-origin proxy (and fixes Getty sizing) so the blob fetch works.
+    const fetchUrl = resolveArtworkImageUrl(imageUrl);
     try {
-      const res = await fetch(imageUrl);
+      const res = await fetch(fetchUrl);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -26,7 +30,7 @@ export function DownloadButton({ imageUrl, filename }: DownloadButtonProps) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
-      window.open(imageUrl, "_blank");
+      window.open(fetchUrl, "_blank");
     } finally {
       setLoading(false);
     }
