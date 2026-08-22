@@ -72,6 +72,7 @@ export default async function SearchPage({
                           fill
                           className="object-cover"
                           sizes="32px"
+                          unoptimized
                         />
                       </div>
                     ) : (

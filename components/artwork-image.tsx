@@ -16,8 +16,12 @@ interface ArtworkImageProps {
   className?: string;
   loading?: "eager" | "lazy";
   priority?: boolean;
-  /** Target rendered width (CSS px × DPR); enables Cloudflare resizing. */
-  displayWidth?: number;
+  /**
+   * Route through Vercel Image Optimization (resized WebP, 1600px bucket).
+   * Reserved for the artwork-page hero — every optimized image is a billed
+   * unique transform, and cards already get museum thumbnails.
+   */
+  optimize?: boolean;
 }
 
 function Placeholder({ className }: { className?: string }) {
@@ -40,15 +44,20 @@ export function ArtworkImage({
   className,
   loading,
   priority,
-  displayWidth,
+  optimize = false,
 }: ArtworkImageProps) {
-  const candidates = imageSrcCandidates(src, displayWidth);
+  const candidates = imageSrcCandidates(src);
   const [index, setIndex] = useState(0);
+  // First failure of an optimized hero (402 over quota, 400 unknown host,
+  // upstream timeout) retries the same URL straight from the museum.
+  const [optimizeFailed, setOptimizeFailed] = useState(false);
+  const optimized = optimize && !optimizeFailed;
 
   // Above-the-fold images: open the TLS connection to the museum host during
   // SSR (React dedupes and emits <link rel="preconnect"> in <head>). Only
-  // for cross-origin absolute URLs; same-origin proxy/CF paths need nothing.
-  if (priority && /^https?:\/\//.test(candidates[0])) {
+  // for direct cross-origin loads; optimized heroes and the /img/aic proxy
+  // are served from our own origin.
+  if (priority && !optimized && /^https?:\/\//.test(candidates[0])) {
     preconnect(new URL(candidates[0]).origin);
   }
 
@@ -71,7 +80,11 @@ export function ArtworkImage({
       // loading alongside it triggers a Next warning.
       loading={priority ? undefined : loading}
       priority={priority}
-      onError={() => setIndex((i) => i + 1)}
+      unoptimized={!optimized}
+      onError={() => {
+        if (optimized) setOptimizeFailed(true);
+        else setIndex((i) => i + 1);
+      }}
     />
   );
 }

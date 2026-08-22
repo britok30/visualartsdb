@@ -16,17 +16,40 @@ const nextConfig: NextConfig = {
     staticGenerationRetryCount: 2,
   },
   images: {
-    unoptimized: true,
+    // Vercel Image Optimization is used ONLY for the artwork-page hero
+    // (components/artwork-image.tsx passes `unoptimized` everywhere else).
+    // Museum heroes run 1–7 MB; cards already get museum thumbnails. Every
+    // optimized hero is one unique transform (~$0.05/1k on Pro), so:
+    // - a single device size keeps 1x/2x srcset entries on the same URL
+    // - a 31-day TTL avoids re-transforming on revalidation
+    // - `remotePatterns` lists every museum host we hotlink; unknown hosts
+    //   400 and the component falls back to the direct URL.
+    deviceSizes: [1600],
+    imageSizes: [256],
+    qualities: [75],
+    formats: ["image/webp"],
+    minimumCacheTTL: 2678400,
     remotePatterns: [
-      // WikiArt
-      new URL("https://uploads*.wikiart.org/**"),
-      // Art Institute of Chicago (IIIF)
+      new URL("https://**.wikiart.org/**"),
       new URL("https://www.artic.edu/**"),
       new URL("https://lakeimagesweb.artic.edu/**"),
-      // Rijksmuseum
-      new URL("https://lh3.googleusercontent.com/**"),
-      // MET Museum
+      new URL("https://openaccess-cdn.clevelandart.org/**"),
+      new URL("https://framemark.vam.ac.uk/**"),
+      new URL("https://kokoelma.kansallisgalleria.fi/**"),
+      new URL("https://nrs.harvard.edu/**"),
+      new URL("https://ids.lib.harvard.edu/**"),
       new URL("https://images.metmuseum.org/**"),
+      new URL("https://api.nga.gov/**"),
+      new URL("https://**.artsmia.org/**"),
+      new URL("https://whitneymedia.org/**"),
+      new URL("https://www.parismuseescollections.paris.fr/**"),
+      new URL("https://apicollections.parismusees.paris.fr/**"),
+      new URL("https://**.smk.dk/**"),
+      new URL("https://media.getty.edu/**"),
+      new URL("https://media.tate.org.uk/**"),
+      new URL("https://lh3.googleusercontent.com/**"),
+      // Smithsonian addresses images by query string (?id=…)
+      { protocol: "https", hostname: "ids.si.edu", pathname: "/ids/deliveryService" },
     ],
   },
   // Legacy ?page=N URLs → path-based pagination. Handling this at the edge

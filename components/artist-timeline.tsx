@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArtworkImage } from "./artwork-image";
-import { IMAGE_WIDTHS } from "@/lib/artwork-image-url";
 
 interface TimelineArtwork {
   id: string;
@@ -79,7 +78,6 @@ export function ArtistTimeline({
                     {(artwork.thumbnailUrl || artwork.imageUrl) ? (
                       <ArtworkImage
                         src={artwork.thumbnailUrl || artwork.imageUrl!}
-                        displayWidth={IMAGE_WIDTHS.thumb}
                         alt={artwork.title}
                         fill
                         sizes="96px"

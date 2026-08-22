@@ -47,44 +47,13 @@ export function isAicUrl(url: string): boolean {
   return AIC_IIIF_RE.test(url);
 }
 
-// --- Cloudflare image transformations (opt-in) ---------------------------
-//
-// Museum servers send full-size JPEGs with no resizing or modern formats.
-// When the zone has Images → Transformations enabled (with "Resize images
-// from any origin" on, since sources are third-party hosts), the
-// /cdn-cgi/image/ URL form resizes, converts to AVIF/WebP, and caches the
-// result at the Cloudflare edge — without any per-image cost on Vercel.
-// Gated by NEXT_PUBLIC_CF_IMAGE_RESIZE=1 so it stays inert until the zone
-// setting exists; `onerror=redirect` makes Cloudflare fall back to the
-// original URL if a transform fails (unsupported source, size limit, etc.).
-
-export const CF_IMAGE_RESIZE_ENABLED =
-  process.env.NEXT_PUBLIC_CF_IMAGE_RESIZE === "1";
-
-/** Rendered-width buckets, kept small so edge-cache hit rates stay high. */
-export const IMAGE_WIDTHS = {
-  thumb: 200, // timeline strips, avatars
-  card: 640, // 300px cards @2x
-  detail: 1600, // artwork page hero
-} as const;
-
-export function cfImageUrl(resolvedUrl: string, width: number): string {
-  const source = resolvedUrl.startsWith("/")
-    ? resolvedUrl.slice(1) // same-zone path (e.g. img/aic/…)
-    : resolvedUrl;
-  return `/cdn-cgi/image/width=${width},quality=82,format=auto,fit=scale-down,onerror=redirect/${source}`;
-}
-
 /**
  * Candidate URLs for an <img>, best first. The component walks this list on
- * load errors: CF transform → direct (proxied/rewritten) URL → WikiArt
- * un-suffixed original.
+ * load errors: direct (proxied/rewritten) URL → WikiArt un-suffixed original.
  */
-export function imageSrcCandidates(url: string, width?: number): string[] {
+export function imageSrcCandidates(url: string): string[] {
   const resolved = resolveArtworkImageUrl(url);
-  const out: string[] = [];
-  if (CF_IMAGE_RESIZE_ENABLED && width) out.push(cfImageUrl(resolved, width));
-  out.push(resolved);
+  const out = [resolved];
   const wikiart = resolved.match(/^(.+)![^/]+$/);
   if (wikiart) out.push(wikiart[1]);
   return out;

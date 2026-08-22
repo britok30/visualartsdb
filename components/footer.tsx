@@ -15,6 +15,7 @@ export function Footer() {
               width={160}
               height={160}
               className="h-20 w-auto"
+              unoptimized
             />
             <p className="mt-3 text-xs leading-relaxed text-neutral-400">
               An open visual arts database with {SITE_STATS.artworks} artworks,{" "}

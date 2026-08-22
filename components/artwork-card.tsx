@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { ArtworkImage } from "./artwork-image";
-import { IMAGE_WIDTHS } from "@/lib/artwork-image-url";
 import { FavoriteButton } from "./favorite-button";
 
 interface ArtworkCardProps {
@@ -49,7 +48,6 @@ export function ArtworkCard({
               sizes="300px"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               priority={priority}
-              displayWidth={IMAGE_WIDTHS.card}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-neutral-200">
