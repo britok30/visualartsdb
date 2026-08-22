@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import { ImageOff } from "lucide-react";
+import { preconnect } from "react-dom";
 import { useState } from "react";
-import { resolveArtworkImageUrl } from "@/lib/artwork-image-url";
+import { imageSrcCandidates } from "@/lib/artwork-image-url";
 
 interface ArtworkImageProps {
   src: string;
@@ -15,6 +16,8 @@ interface ArtworkImageProps {
   className?: string;
   loading?: "eager" | "lazy";
   priority?: boolean;
+  /** Target rendered width (CSS px × DPR); enables Cloudflare resizing. */
+  displayWidth?: number;
 }
 
 function Placeholder({ className }: { className?: string }) {
@@ -27,11 +30,6 @@ function Placeholder({ className }: { className?: string }) {
   );
 }
 
-function stripWikiArtSuffix(url: string): string | null {
-  const match = url.match(/^(.+)![^/]+$/);
-  return match ? match[1] : null;
-}
-
 export function ArtworkImage({
   src,
   alt,
@@ -42,21 +40,19 @@ export function ArtworkImage({
   className,
   loading,
   priority,
+  displayWidth,
 }: ArtworkImageProps) {
-  const resolvedSrc = resolveArtworkImageUrl(src);
-  const fallbackSrc = stripWikiArtSuffix(resolvedSrc);
-  const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
-  const [failed, setFailed] = useState(false);
+  const candidates = imageSrcCandidates(src, displayWidth);
+  const [index, setIndex] = useState(0);
 
-  function handleError() {
-    if (currentSrc === resolvedSrc && fallbackSrc) {
-      setCurrentSrc(fallbackSrc);
-    } else {
-      setFailed(true);
-    }
+  // Above-the-fold images: open the TLS connection to the museum host during
+  // SSR (React dedupes and emits <link rel="preconnect"> in <head>). Only
+  // for cross-origin absolute URLs; same-origin proxy/CF paths need nothing.
+  if (priority && /^https?:\/\//.test(candidates[0])) {
+    preconnect(new URL(candidates[0]).origin);
   }
 
-  if (failed) {
+  if (index >= candidates.length) {
     return (
       <Placeholder className={fill ? undefined : "aspect-3/4 rounded-lg"} />
     );
@@ -64,16 +60,18 @@ export function ArtworkImage({
 
   return (
     <Image
-      src={currentSrc}
+      src={candidates[index]}
       alt={alt}
       fill={fill}
       width={width}
       height={height}
       sizes={sizes}
       className={className}
-      loading={loading}
+      // `priority` already implies eager + fetchPriority="high"; passing
+      // loading alongside it triggers a Next warning.
+      loading={priority ? undefined : loading}
       priority={priority}
-      onError={handleError}
+      onError={() => setIndex((i) => i + 1)}
     />
   );
 }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArtworkImage } from "@/components/artwork-image";
+import { IMAGE_WIDTHS } from "@/lib/artwork-image-url";
 import { FavoriteButton } from "@/components/favorite-button";
 import { CiteButton } from "@/components/cite-button";
 import { DownloadButton } from "@/components/download-button";
@@ -139,6 +140,7 @@ export default async function ArtworkPage({
                 height={1100}
                 className="h-auto max-h-[80vh] w-auto max-w-full object-contain"
                 priority
+                displayWidth={IMAGE_WIDTHS.detail}
               />
             ) : (
               <div className="flex h-96 w-full items-center justify-center bg-neutral-50 text-neutral-500">

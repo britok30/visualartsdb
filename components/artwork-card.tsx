@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { ArtworkImage } from "./artwork-image";
+import { IMAGE_WIDTHS } from "@/lib/artwork-image-url";
 import { FavoriteButton } from "./favorite-button";
 
 interface ArtworkCardProps {
@@ -27,7 +28,10 @@ export function ArtworkCard({
   priority = false,
   size = "default",
 }: ArtworkCardProps) {
-  const src = imageUrl || thumbnailUrl;
+  // Cards render at ~300px: prefer the museum's thumbnail over the full-size
+  // image (Met "original" files run 5–20 MB). The favorite button keeps the
+  // same src so the favorites page shows what the user saw.
+  const src = thumbnailUrl || imageUrl;
   const sizeClass =
     size === "tall" ? "h-[320px] w-[220px] sm:h-[420px] sm:w-[280px]" : "h-[320px] w-full";
 
@@ -44,7 +48,8 @@ export function ArtworkCard({
               fill
               sizes="300px"
               className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-              loading={priority ? "eager" : "lazy"}
+              priority={priority}
+              displayWidth={IMAGE_WIDTHS.card}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-neutral-200">

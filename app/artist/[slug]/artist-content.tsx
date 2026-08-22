@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { htmlToPlain, truncateAtWord } from "@/lib/text";
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
+import { IMAGE_WIDTHS } from "@/lib/artwork-image-url";
 import { ArtworkCard } from "@/components/artwork-card";
 import { FavoriteButton } from "@/components/favorite-button";
 import { Pagination } from "@/components/pagination";
@@ -81,6 +82,8 @@ export async function ArtistContent({
               fill
               className="object-cover"
               sizes="112px"
+              priority
+              displayWidth={IMAGE_WIDTHS.thumb}
             />
           </div>
         )}
