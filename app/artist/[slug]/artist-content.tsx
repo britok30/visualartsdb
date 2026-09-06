@@ -30,10 +30,8 @@ export async function ArtistContent({
   const artist = await getArtistBySlug(slug);
   if (!artist) notFound();
 
-  const [{ rows: works, total }, timelineArtworks] = await Promise.all([
-    getArtistArtworks(artist.id, page, PAGE_SIZE),
-    getArtistTimelineArtworks(artist.id),
-  ]);
+  const { rows: works, total } = await getArtistArtworks(artist.id, page, PAGE_SIZE);
+  const timelineArtworks = await getArtistTimelineArtworks(artist.id);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   if (page > totalPages) notFound();

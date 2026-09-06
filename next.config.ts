@@ -2,9 +2,7 @@ import type { NextConfig } from "next";
 import { withBotId } from "botid/next/config";
 
 const nextConfig: NextConfig = {
-  // The homepage runs 43 section queries against a 1.6M-row table on a
-  // 0.25 CU compute (~90-140s total). 180s left no margin; builds have
-  // minutes to spare, so give it room rather than failing the deploy.
+  // Serialized static generation must allow time for the small Neon compute.
   staticPageGenerationTimeout: 420,
   experimental: {
     // Build-time page generation runs against a 0.25 CU (1 GB) Neon compute:
@@ -63,6 +61,22 @@ const nextConfig: NextConfig = {
       permanent: true,
     });
     return [
+      {
+        source: "/browse/artists",
+        has: [
+          { type: "query", key: "letter", value: "(?<letter>[A-Za-z])" },
+          { type: "query", key: "page", value: "(?<p>\\d+)" },
+        ],
+        destination: "/browse/artists/letter/:letter/page/:p",
+        permanent: true,
+      },
+      {
+        source: "/browse/artists",
+        has: [{ type: "query", key: "letter", value: "(?<letter>[A-Za-z])" }],
+        destination: "/browse/artists/letter/:letter",
+        permanent: true,
+      },
+      legacyPageQuery("/browse/artists"),
       legacyPageQuery("/artist/:slug"),
       legacyPageQuery("/browse/styles/:slug"),
       legacyPageQuery("/browse/genres/:slug"),

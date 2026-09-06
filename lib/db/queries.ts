@@ -1,3 +1,5 @@
+import { isValidPage } from "@/lib/pagination";
+import { notFound } from "next/navigation";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { db } from ".";
@@ -214,7 +216,15 @@ export async function getArtistArtworks(
   page = 1,
   limit = 24
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artworkArtists)
+    .where(eq(artworkArtists.artistId, artistId));
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -231,11 +241,6 @@ export async function getArtistArtworks(
     .orderBy(asc(artworks.year))
     .limit(limit)
     .offset(offset);
-
-  const [total] = await db
-    .select({ value: count() })
-    .from(artworkArtists)
-    .where(eq(artworkArtists.artistId, artistId));
 
   return { rows, total: total.value };
 }
@@ -382,6 +387,7 @@ export async function getArtworksByStyle(
   page = 1,
   limit = 24
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
 
   const [style] = await db
@@ -391,6 +397,13 @@ export async function getArtworksByStyle(
     .limit(1);
 
   if (!style) return null;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artworkStyles)
+    .where(eq(artworkStyles.styleId, style.id));
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -412,11 +425,6 @@ export async function getArtworksByStyle(
     .limit(limit)
     .offset(offset);
 
-  const [total] = await db
-    .select({ value: count() })
-    .from(artworkStyles)
-    .where(eq(artworkStyles.styleId, style.id));
-
   return { style, rows, total: total.value };
 }
 
@@ -425,6 +433,7 @@ export async function getArtworksByGenre(
   page = 1,
   limit = 24
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
 
   const [genre] = await db
@@ -434,6 +443,13 @@ export async function getArtworksByGenre(
     .limit(1);
 
   if (!genre) return null;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artworks)
+    .where(eq(artworks.genreId, genre.id));
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -454,11 +470,6 @@ export async function getArtworksByGenre(
     .limit(limit)
     .offset(offset);
 
-  const [total] = await db
-    .select({ value: count() })
-    .from(artworks)
-    .where(eq(artworks.genreId, genre.id));
-
   return { genre, rows, total: total.value };
 }
 
@@ -467,6 +478,7 @@ export async function getArtworksByMuseum(
   page = 1,
   limit = 24
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
 
   const [museum] = await db
@@ -476,6 +488,13 @@ export async function getArtworksByMuseum(
     .limit(1);
 
   if (!museum) return null;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artworks)
+    .where(eq(artworks.museumId, museum.id));
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -496,11 +515,6 @@ export async function getArtworksByMuseum(
     .limit(limit)
     .offset(offset);
 
-  const [total] = await db
-    .select({ value: count() })
-    .from(artworks)
-    .where(eq(artworks.museumId, museum.id));
-
   return { museum, rows, total: total.value };
 }
 
@@ -517,8 +531,23 @@ export const searchArtworks = unstable_cache(async function searchArtworks(
   page = 1,
   limit = 24,
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
   const pattern = `%${escapeLike(query)}%`;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artworks)
+    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
+    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
+    .where(
+      or(
+        ilike(artworks.title, pattern),
+        ilike(artists.name, pattern)
+      )
+    );
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -544,18 +573,6 @@ export const searchArtworks = unstable_cache(async function searchArtworks(
     .limit(limit)
     .offset(offset);
 
-  const [total] = await db
-    .select({ value: count() })
-    .from(artworks)
-    .innerJoin(artworkArtists, eq(artworks.id, artworkArtists.artworkId))
-    .innerJoin(artists, eq(artworkArtists.artistId, artists.id))
-    .where(
-      or(
-        ilike(artworks.title, pattern),
-        ilike(artists.name, pattern)
-      )
-    );
-
   return { rows, total: total.value };
 }, ["search-artworks"], { revalidate: 86400 });
 
@@ -564,8 +581,21 @@ export const searchArtists = unstable_cache(async function searchArtists(
   page = 1,
   limit = 24,
 ) {
+  if (!isValidPage(page, limit)) notFound();
   const offset = (page - 1) * limit;
   const pattern = `%${escapeLike(query)}%`;
+
+  const [total] = await db
+    .select({ value: count() })
+    .from(artists)
+    .where(
+      or(
+        ilike(artists.name, pattern),
+        ilike(artists.nationality, pattern)
+      )
+    );
+
+  if (page > Math.max(1, Math.ceil(total.value / limit))) notFound();
 
   const rows = await db
     .select({
@@ -587,16 +617,6 @@ export const searchArtists = unstable_cache(async function searchArtists(
     .orderBy(artists.name)
     .limit(limit)
     .offset(offset);
-
-  const [total] = await db
-    .select({ value: count() })
-    .from(artists)
-    .where(
-      or(
-        ilike(artists.name, pattern),
-        ilike(artists.nationality, pattern)
-      )
-    );
 
   return { rows, total: total.value };
 }, ["search-artists"], { revalidate: 86400 });

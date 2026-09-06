@@ -1,3 +1,4 @@
+import { parsePage } from "@/lib/pagination";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
@@ -5,13 +6,10 @@ import {
   getArtistMetadata,
 } from "../../artist-content";
 
+export const dynamic = "force-static";
+
 export const revalidate = 2592000; // 30-day safety valve — sync invalidates changed paths on demand via /api/revalidate
 
-function parsePage(raw: string): number | null {
-  if (!/^\d+$/.test(raw)) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 1 ? n : null;
-}
 
 export async function generateMetadata({
   params,

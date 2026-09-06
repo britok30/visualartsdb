@@ -1,3 +1,4 @@
+import { normalizeSearchQuery } from "@/lib/search-input";
 import { NextRequest, NextResponse } from "next/server";
 import { checkBotId } from "botid/server";
 import { db } from "@/lib/db";
@@ -16,6 +17,16 @@ const CACHE_HEADERS = {
 };
 
 export async function GET(request: NextRequest) {
+  const q = normalizeSearchQuery(request.nextUrl.searchParams.get("q"));
+  // Min 3 chars — pg_trgm cannot use the GIN index for shorter patterns,
+  // so anything below 3 would force a seq scan on every artwork.
+  if (!q || q.length < 3) {
+    return NextResponse.json(
+      { artists: [], artworks: [], styles: [], genres: [] },
+      { headers: CACHE_HEADERS },
+    );
+  }
+
   // LOG-ONLY for now: classification misfired on real browsers (2026-08-20),
   // so record the verdict without enforcing until the logs show clean
   // separation. Runs only on CDN cache misses — the requests that would
@@ -23,18 +34,8 @@ export async function GET(request: NextRequest) {
   const verification = await checkBotId();
   if (verification.isBot) {
     console.log(
-      `[botid] would-block search q=${JSON.stringify(request.nextUrl.searchParams.get("q") ?? "")} ` +
+      `[botid] would-block search q=${JSON.stringify(q)} ` +
         `verified=${verification.isVerifiedBot ?? false}`,
-    );
-  }
-
-  const q = request.nextUrl.searchParams.get("q")?.trim();
-  // Min 3 chars — pg_trgm cannot use the GIN index for shorter patterns,
-  // so anything below 3 would force a seq scan on every artwork.
-  if (!q || q.length < 3) {
-    return NextResponse.json(
-      { artists: [], artworks: [], styles: [], genres: [] },
-      { headers: CACHE_HEADERS },
     );
   }
 

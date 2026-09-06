@@ -1,3 +1,6 @@
+import { notFound } from "next/navigation";
+import { parsePage } from "@/lib/pagination";
+import { MAX_SEARCH_PAGE, normalizeSearchQuery } from "@/lib/search-input";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
@@ -28,11 +31,12 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { q, page: pageStr } = await searchParams;
-  const page = Math.max(1, Number(pageStr) || 1);
+  const page = pageStr === undefined ? 1 : parsePage(pageStr);
+  if (page === null || page > MAX_SEARCH_PAGE) notFound();
   // Same 3-char floor as /api/search: shorter patterns can't use the pg_trgm
   // index and would force two seq scans over ~1M rows per request.
-  const raw = q?.trim() ?? "";
-  const query = raw.length >= 3 ? raw : "";
+  const raw = typeof q === "string" ? q.trim().slice(0, 120) : "";
+  const query = normalizeSearchQuery(q);
 
   let artworksResult = null;
   let artistsResult = null;
@@ -123,7 +127,7 @@ export default async function SearchPage({
 
             <Pagination
               page={page}
-              totalPages={Math.ceil(artworksResult.total / 24)}
+              totalPages={Math.min(MAX_SEARCH_PAGE, Math.ceil(artworksResult.total / 24))}
               href={(p) => `/search?q=${encodeURIComponent(query)}&page=${p}`}
             />
           </section>

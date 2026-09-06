@@ -49,7 +49,7 @@ export function Pagination({ page, totalPages, href }: PaginationProps) {
     >
       {page > 1 ? (
         <Button variant="outline" size="sm" asChild>
-          <Link href={href(page - 1)} rel="prev" aria-label="Previous page">
+          <Link prefetch={false} href={href(page - 1)} rel="prev" aria-label="Previous page">
             <ChevronLeft size={14} />
             Previous
           </Link>
@@ -85,7 +85,7 @@ export function Pagination({ page, totalPages, href }: PaginationProps) {
                 </Button>
               ) : (
                 <Button variant="outline" size="sm" asChild className="min-w-9">
-                  <Link href={href(item)} aria-label={`Page ${item}`}>
+                  <Link prefetch={false} href={href(item)} aria-label={`Page ${item}`}>
                     {item}
                   </Link>
                 </Button>
@@ -97,7 +97,7 @@ export function Pagination({ page, totalPages, href }: PaginationProps) {
 
       {page < totalPages ? (
         <Button variant="outline" size="sm" asChild>
-          <Link href={href(page + 1)} rel="next" aria-label="Next page">
+          <Link prefetch={false} href={href(page + 1)} rel="next" aria-label="Next page">
             Next
             <ChevronRight size={14} />
           </Link>
@@ -122,6 +122,7 @@ export function Pagination({ page, totalPages, href }: PaginationProps) {
             </span>
           ) : (
             <Link
+              prefetch={false}
               key={p}
               href={href(p)}
               className="transition-colors hover:text-neutral-700"

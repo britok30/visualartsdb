@@ -31,11 +31,7 @@ export function browsePageHref(kind: BrowseKind, slug: string, page: number) {
     : `/browse/${kind}/${slug}/page/${page}`;
 }
 
-export function parsePage(raw: string): number | null {
-  if (!/^\d+$/.test(raw)) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= 1 ? n : null;
-}
+export { parsePage } from "@/lib/pagination";
 
 interface BrowseDetail {
   name: string;

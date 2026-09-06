@@ -51,7 +51,12 @@ export async function POST(request: NextRequest) {
   }
 
   for (const path of paths) {
-    revalidatePath(path);
+    if (path === "/browse/artists") {
+      // The alphabet and pagination now have their own static paths.
+      revalidatePath("/browse/artists", "layout");
+    } else {
+      revalidatePath(path);
+    }
   }
 
   return NextResponse.json({ revalidated: paths.length });

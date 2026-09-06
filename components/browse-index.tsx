@@ -93,7 +93,9 @@ export async function BrowseIndexContent({
   page: number;
 }) {
   const cfg = CONFIG[kind];
-  const [rows, total] = await Promise.all([cfg.fetch(page), cfg.total()]);
+  const total = await cfg.total();
+  if (page > Math.max(1, Math.ceil(total / INDEX_PER_PAGE))) notFound();
+  const rows = await cfg.fetch(page);
   const totalPages = Math.max(1, Math.ceil(total / INDEX_PER_PAGE));
   if (page > totalPages || (page > 1 && rows.length === 0)) notFound();
 
