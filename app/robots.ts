@@ -21,6 +21,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     "OAI-SearchBot",
     "ClaudeBot",
     "Claude-Web",
+    "Claude-SearchBot",
+    "ExaSearchBot",
     "anthropic-ai",
     "CCBot",
     "Google-Extended",
